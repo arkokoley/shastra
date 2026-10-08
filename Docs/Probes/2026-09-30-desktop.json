@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "testRunID": "P0-20260930",
+  "adapterRevision": "continuity-foundation-v1",
+  "overallMinimumGate": "notPassed",
+  "surfaces": [
+    {
+      "surface": "codexDesktop",
+      "appBuild": "12404",
+      "appVersion": "26.928.21956",
+      "outcome": "temporarilyUnavailable",
+      "stage": "accessibilityInspection",
+      "detail": "The computer-use tool rejected com.openai.codex for safety reasons. No alternate GUI control route was used. App-hosted thread tools do not establish an external Shastra adapter.",
+      "verifiedCapabilities": []
+    },
+    {
+      "surface": "cursorAgentsWindow",
+      "appBuild": "3.23.10",
+      "runtimeBuild": null,
+      "nativeThreadID": "68f6c99a-c31a-4680-a4d6-3b068797a037",
+      "outcome": "documentedUnverified",
+      "evidence": [
+        "Created a disposable native chat in the Test workspace using visible UI controls; the workspace itself was not disposable.",
+        "Submitted P0-20260930-A with an explicit instruction to use no tools, edit no files, and not delegate. Observed SHASTRA-P0-A-ACK in the native UI.",
+        "Submitted P0-20260930-B while idle. Observed both acknowledgements in the same native chat.",
+        "Read-only native store observation correlated both user turns and both assistant replies under the same composer ID and workspace metadata.",
+        "ShastraSelfTest --cursor-observe loaded four ordered messages, deduplicated a second read, and preserved event IDs after reopening a disposable SQLite database."
+      ],
+      "probePassed": ["foregroundUISubmission", "idleFollowup", "nativeObservation", "observationPersistence"],
+      "productionVerifiedCapabilities": [],
+      "remaining": ["trusted caller enrollment", "second-caller isolation", "Shastra-owned delivery driver", "fresh pre-send account and endpoint verification", "draft preservation", "wrong-thread navigation", "lost-receipt reconciliation", "app tools", "account isolation", "native app restart"]
+    },
+    {
+      "surface": "cursorIDE",
+      "appBuild": "3.23.10",
+      "outcome": "unknown",
+      "detail": "Not exercised independently. Agents Window results are not transferred to the IDE surface.",
+      "verifiedCapabilities": []
+    },
+    {
+      "surface": "claudeDesktopCode",
+      "appBuild": "2.16120.0",
+      "outcome": "temporarilyUnavailable",
+      "stage": "accountEligibility",
+      "detail": "The installed app's signed-in account displays Free and the Code surface displays Get Claude Code. No Code session or session inbox was available for testing. No upgrade or account change was performed.",
+      "verifiedCapabilities": []
+    }
+  ]
+}

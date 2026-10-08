@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-01",
+  "appVersion": "0.3.0",
+  "surface": "managedRuntime",
+  "automated": { "swiftTests": 18, "claudeBridgeTests": 11, "selfTest": "passed" },
+  "live": [
+    { "provider": "codex", "nativeThreadID": "01a0f894-0ce2-7ff3-980a-25aa30a8c6eb", "taskID": "54F3AF74-F932-C15B-C7CD-E90181FE52CC", "scopedMCPRead": "passed", "evidence": "Native mcp_tool_call_end event for shastra.agents_list with successful result" },
+    { "provider": "cursor", "nativeThreadID": "f5e5adcc-e4a0-4cdd-b17f-c989182506b0", "taskID": "D1926F8B-F6D6-AA4C-FD03-AEA2E507FCBA", "scopedMCPRead": "passed", "approval": "allow-once", "evidence": "ACP permission persisted and answered; task-list result excluded the unrelated Codex root" },
+    { "provider": "codex", "nativeThreadID": "01a0f890-4667-7cb1-9fa8-f0a6dfa627d9", "uiCloseContinuity": "passed", "evidence": "Native turn completed in the service after UI quit; persisted reply read through CLI" },
+    { "provider": "codex", "nativeThreadID": "01a0f89a-464c-7f43-8fd1-98dadf390b2e", "taskID": "FA6A5653-2355-1BA4-38AC-1A36476DFA97", "isolatedWorkspace": "passed", "orderedFollowup": "passed", "checkpointID": "1B48D4C0-A0D4-4166-BDD1-70899E098E44", "evidence": "Created in native UI; exact replies SHASTRA-FINAL-ACK and SHASTRA-QUEUED-ACK; checkpoint saved from Actions" }
+  ],
+  "desktopCapabilitiesPromoted": false,
+  "limits": ["Native desktop thread control remains gated", "Authenticated Claude and Grok coordination unverified", "Service starts with UI, not at login", "Full Cursor parity and P0–P8 completion are not claimed"]
+}
