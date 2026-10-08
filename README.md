@@ -1,5 +1,7 @@
 # Shastra
 
+[Project website](https://arkokoley.github.io/shastra/) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+
 Shastra is a native SwiftUI macOS workspace for conversations with coding agents. This is a working prototype of the linked product plan, with automatic local history discovery and direct agent sessions. The Agents workspace includes managed worker coordination and a background service; the desktop continuity plan remains in progress.
 
 The current implementation roadmap is [Desktop continuity and coordination](BUILD_PLAN.md), with [desktop compatibility research and proof procedures](Docs/DesktopCompatibility.md). It prioritizes existing threads in the Codex, Cursor, and Claude Code **desktop apps**, round trips back to those same threads, and cross-app agent coordination. Those desktop guarantees are not implemented by the current CLI/SDK transports.
@@ -27,7 +29,8 @@ The current implementation roadmap is [Desktop continuity and coordination](BUIL
 Requires macOS 15 or newer, Apple Silicon, and Swift 6. Command Line Tools are sufficient for the package and local app bundle.
 
 ```sh
-cd /Users/arkokoley/code/Test/Shastra
+git clone https://github.com/arkokoley/shastra.git
+cd shastra
 (cd Bridge/Claude && npm ci --ignore-scripts --no-audit --no-fund)
 swift build
 zsh Scripts/test.sh
@@ -107,3 +110,7 @@ The inbox collects approvals, questions, failures, and ownership reconciliation.
 The packaged CLI is `dist/Shastra.app/Contents/MacOS/ShastraCLI`. `snapshot`, `agents.spawn`, `agents.send`, `agents.cancel`, `threads.read`, and workspace lifecycle methods accept `key=value` arguments. Pass `operation_id=<original ID>` to reconcile an uncertain spawn or send without creating a new operation. MCP mode requires a scoped service-issued runtime credential and never reads the admin token. These grants enforce tool-level task-family access; processes running as the same macOS user are not an OS security sandbox.
 
 Live managed-runtime coordination was verified on October 1, 2026 with Codex and Cursor. See [Agents verification](Docs/AgentsVerification.md) for evidence and explicit remaining boundaries.
+
+## License
+
+Shastra is open source under the [MIT license](LICENSE). Third-party dependencies retain their own licenses. See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
