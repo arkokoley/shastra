@@ -57,6 +57,8 @@ The bottom status bar follows the selected chat's provider/account. Codex displa
 
 ## Add and switch accounts
 
+**Switch accounts without restarting Shastra or manually rebuilding your conversation context.** Choose a saved account from the chat composer and keep your project and conversation in view. Wait for the current turn to finish; switching starts a fresh vendor session with the chat's context.
+
 1. Open **Accounts**, choose Codex, Cursor, Claude, or Grok, and enter an optional name such as Work or Personal.
 2. Choose **Sign in** to finish the vendor's browser flow, **Save current sign-in** to keep the local login, or **Import → Import saved accounts** to read supported account-manager profiles. Individual authentication JSON files can also be imported.
 3. Choose **Use by default** for new chats. In an existing chat, use the account menu beside the agent name in the composer. Switching starts a fresh vendor session with the chat's context; wait for a running turn to finish before switching.
