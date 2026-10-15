@@ -108,6 +108,7 @@ struct WorkspaceView: View {
         .background(WindowChrome())
         .tint(Surface.accent)
         .preferredColorScheme(chrome.appearance)
+        .sheet(item: $model.collaborationRoute) { route in CollaborationSheet(route: route).environmentObject(model) }
         .sheet(isPresented: $model.showRuntimeLibrary) { RuntimeLibraryView().environmentObject(model) }
         .onReceive(NotificationCenter.default.publisher(for: .shastraOpenChat)) { event in
             if let value = event.object as? String, let id = UUID(uuidString: value) { model.openAgent(id) }
@@ -486,6 +487,7 @@ private struct ConversationPane: View {
     var body: some View {
         VStack(spacing: 0) {
             ConversationRunStatus(conversation: conversation)
+            CollaborationBar(workspace: conversation.workingDirectory, sourceID: conversation.id)
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 24) {
@@ -513,8 +515,10 @@ private struct ConversationPane: View {
                         ForEach(timeline) { item in
                             switch item {
                             case .entry(let entry):
-                                MessageRow(entry: entry, provider: conversation.nativeEndpoints.first(where: { $0.id == entry.endpointID })?.provider ?? conversation.sourceEndpoint?.provider ?? conversation.provider).id(item.id)
-                                    .padding(4).background(model.jumpToEntryID == entry.id ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 8))
+                                VStack(alignment: .leading, spacing: 5) {
+                                    MessageRow(entry: entry, provider: conversation.nativeEndpoints.first(where: { $0.id == entry.endpointID })?.provider ?? conversation.sourceEndpoint?.provider ?? conversation.provider)
+                                    MessageActions(sourceID: conversation.id, entry: entry)
+                                }.id(item.id).padding(4).background(model.jumpToEntryID == entry.id ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 8))
                             case .tools(let entries):
                                 ToolActivityGroup(entries: entries).id(item.id)
                             }

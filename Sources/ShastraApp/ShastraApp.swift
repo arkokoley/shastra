@@ -5,6 +5,9 @@ import ShastraCore
     @Published var experience = ExperiencePreferences.read(UserDefaults.standard.data(forKey: "experience.v1")) {
         didSet { agentBoard.organization = experience.chats; if let data = try? JSONEncoder().encode(experience) { UserDefaults.standard.set(data, forKey: "experience.v1") } }
     }
+    @Published var collaboration = CollaborationSnapshot()
+    @Published var collaborationRoute: CollaborationRoute?
+    let collaborationStore = CollaborationStore()
     @Published var chatFilter = "All"
     @Published var newModel = ""
     @Published var showRuntimeLibrary = false
@@ -128,6 +131,7 @@ import ShastraCore
         }
         agentBoard.start()
         await reloadAccounts()
+        await refreshCollaboration()
         do {
             conversations = try await store.load()
             _ = try await store.recoverDispatches()
@@ -620,8 +624,9 @@ import ShastraCore
                 }
                 guard sessionTokens[id] == token, !Task.isCancelled,
                       let current = conversations.first(where: { $0.id == id }), let endpoint = current.activeEndpoint else { return }
+                let contextualText = try await collaborationStore.prompt(text, workspace: conversation.workingDirectory)
                 let prompt = needsContext && !conversation.entries.isEmpty
-                    ? try await store.contextPrompt(conversation: conversation, request: text) : text
+                    ? try await store.contextPrompt(conversation: conversation, request: contextualText) : contextualText
                 var entry = Entry(kind: .user, text: text)
                 entry.endpointID = endpoint.id; entry.provenance = .managedRuntime
                 append(entry, to: id)

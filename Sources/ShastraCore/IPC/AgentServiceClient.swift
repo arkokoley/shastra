@@ -13,7 +13,16 @@ public actor AgentServiceClient {
         return try JSONDecoder().decode(AgentServiceSnapshot.self, from: Data(value.utf8))
     }
     public func ensureRunning() async throws {
-        if (try? await request("health")) == "ready" { return }
+        if (try? await request("health")) == "ready" {
+            if (try? await request("service.capabilities")) == "collaboration-v1" { return }
+            // The old helper may outlive the window. Its shutdown guard preserves active work.
+            do { _ = try await request("service.shutdown") }
+            catch { throw ShastraError.unsupported("The background service needs an update. Finish or stop its pending tasks, then reconnect. " + error.localizedDescription) }
+            for _ in 0..<20 {
+                if (try? await request("health")) == nil { break }
+                try await Task.sleep(for: .milliseconds(100))
+            }
+        }
         guard let executable = ServicePaths.executable("ShastraService") else { throw ShastraError.missingExecutable("ShastraService is missing from the app bundle") }
         try FileManager.default.createDirectory(at: ServicePaths.directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let log = ServicePaths.directory.appending(path: "service.log")

@@ -12,6 +12,7 @@ public struct TaskMessage: Identifiable, Codable, Sendable {
     public var createdAt = Date.now
     public var dispatchedAt: Date?
     public var receipt: String?
+    public var delegatedTaskID: UUID?
     public var state = DeliveryState.queued
     public init(text: String, sender: UUID? = nil) { self.text = text; self.sender = sender }
 }
@@ -52,6 +53,12 @@ public struct AgentTask: Codable, Identifiable, Sendable {
     public var archived: Bool
     public var checkpoints: [WorkspaceSnapshot]?
     public var recoveryPending: Bool?
+    public var multitasking: Bool?
+    public var forkOrigin: ForkOrigin?
+    public var annotationIDs: [UUID]?
+    public var projectID: String?
+    public var reviewBase: String?
+    public var steerMessageID: UUID?
     public var notifyParent: Bool
     public init(id: UUID = UUID(), title: String, objective: String, provider: Provider, workspace: String,
                 parentID: UUID? = nil, conversationID: UUID? = nil, accountID: UUID? = nil, model: String? = nil,

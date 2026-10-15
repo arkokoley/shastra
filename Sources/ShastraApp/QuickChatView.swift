@@ -16,6 +16,7 @@ struct QuickChatView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
+                CollaborationBar(workspace: app.workingDirectory)
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 9) {
                         ShastraMark(size: 32)

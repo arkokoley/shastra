@@ -66,11 +66,13 @@ import ShastraCore
             busy = false
         }
     }
-    func send(_ task: AgentTask, files: [String] = [], completed: (() -> Void)? = nil) {
+    func send(_ task: AgentTask, files: [String] = [], mode: FollowupMode = .queue, completed: (() -> Void)? = nil) {
         let draft = drafts[task.id.uuidString] ?? ""
         let text = ComposerContext.prompt(draft, files: files)
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        perform("agents.send", params: ["taskID": task.id.uuidString, "message": text]) { [weak self] in
+        let method = mode == .parallel ? "agents.parallel" : mode == .steer ? "agents.steer" : "agents.send"
+        let params = mode == .parallel ? ["sourceID": task.id.uuidString, "objective": text] : ["taskID": task.id.uuidString, "message": text, "forceQueue": "true"]
+        perform(method, params: params) { [weak self] in
             if self?.drafts[task.id.uuidString] == draft { self?.drafts[task.id.uuidString] = ""; completed?() }
         }
     }

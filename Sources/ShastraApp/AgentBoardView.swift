@@ -135,6 +135,7 @@ private struct AgentTaskDetail: View {
     let spawn: (Bool) -> Void
     @StateObject private var ui = TaskDetailState()
     @StateObject private var workspaceTools = WorkspaceToolsModel()
+    @ViewState private var followupMode = FollowupMode.queue
     private var conversation: Conversation {
         var value = Conversation(provider: task.provider, workingDirectory: task.workspace)
         value.id = task.id; value.title = task.title; value.entries = task.entries; value.vendorSessionID = task.nativeID
@@ -164,6 +165,8 @@ private struct AgentTaskDetail: View {
                 }
                 if task.status.isActive || task.status == .queued { Button("Stop") { action("agents.cancel") } }
             }.padding(16)
+            CollaborationBar(workspace: task.workspace, sourceID: task.id)
+            MultitaskControls(board: board, task: task)
             Divider()
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 18) {
@@ -187,6 +190,7 @@ private struct AgentTaskDetail: View {
                             }
                             if entry.kind == .assistant { MarkdownMessage(text: entry.text) }
                             else { Text(entry.text).font(entry.kind == .tool ? .system(.caption, design: .monospaced) : .body).textSelection(.enabled) }
+                            MessageActions(sourceID: task.id, entry: entry)
                         }.frame(maxWidth: Design.readingWidth, alignment: .leading)
                             .padding(entry.kind == .user ? 14 : 0)
                             .background(entry.kind == .user ? Surface.selected.opacity(0.5) : .clear, in: RoundedRectangle(cornerRadius: 12))
@@ -225,6 +229,8 @@ private struct AgentTaskDetail: View {
                 ComposerActions(draft: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }))
             }
             VStack(alignment: .leading, spacing: 8) {
+                Picker("Send as", selection: $followupMode) { ForEach(FollowupMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
+                    .pickerStyle(.menu).font(.caption)
                 ForEach(task.messages.filter { $0.state == .queued }) { message in
                     HStack { Label(message.text, systemImage: "clock").lineLimit(2).font(.caption); Spacer(); Button { action("message.cancel", ["messageID": message.id.uuidString]) } label: { Image(systemName: "xmark") }.buttonStyle(.plain) }
                 }
@@ -234,13 +240,15 @@ private struct AgentTaskDetail: View {
                 HStack {
                     Text("\(task.provider.title) · \(task.model ?? "Default model") · \(task.column.rawValue)").font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button(task.status.isActive ? "Queue" : "Send") { board.send(task, files: app.experience.attachments[task.id.uuidString] ?? []) { app.experience.attachments[task.id.uuidString] = [] } }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
-                        .disabled(board.busy || task.messages.contains { $0.state == .unknown } || (board.drafts[task.id.uuidString] ?? "").isEmpty)
+                    Button(followupMode == .parallel ? "Run alongside" : followupMode == .steer ? "Redirect" : task.status.isActive ? "Queue" : "Send") { board.send(task, files: app.experience.attachments[task.id.uuidString] ?? [], mode: followupMode) { app.experience.attachments[task.id.uuidString] = [] } }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
+                        .disabled(board.busy || (followupMode == .steer && task.status != .running) || task.messages.contains { $0.state == .unknown } || (board.drafts[task.id.uuidString] ?? "").isEmpty)
                 }
             }.padding(16).composerSurface()
             ComposerWorkspaceBar(path: task.workspace, isNew: false, background: true)
             }.padding(14)
         }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear { followupMode = task.multitasking == true ? .parallel : .queue }
+            .onChange(of: task.multitasking) { _, enabled in followupMode = enabled == true ? .parallel : .queue }
         if ui.showTools {
             WorkspaceToolsView(tools: workspaceTools, conversation: conversation)
                 .frame(minWidth: 350, idealWidth: 440)

@@ -137,7 +137,7 @@ struct WorkspaceToolsView: View {
                 case .terminal:
                     if let terminal = tools.terminal { TerminalPane(session: terminal) }
                 case .browser: NativeBrowserPane(browser: tools.browser)
-                case .changes: GitChangesPane(root: tools.root, onPreview: tools.select)
+                case .changes: GitChangesPane(root: tools.root, sourceID: conversation.id, onPreview: tools.select)
                 case .inspector: InspectorPane(conversation: conversation)
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)

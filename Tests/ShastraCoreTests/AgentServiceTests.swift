@@ -284,3 +284,83 @@ private func spawn(_ service: AgentService, path: String, key: String = UUID().u
     #expect(try await snapshot(service).tasks.first?.nativeID == "missing-thread")
     #expect(try await snapshot(service).tasks.count == 1)
 }
+
+@Test func multitaskDelegatesQueuedRequestsWithFocusedContextAndReturnsResults() async throws {
+    let root = try serviceFolder(); defer { try? FileManager.default.removeItem(at: root) }
+    let repo = root.appending(path: "repo"); try FileManager.default.createDirectory(at: repo, withIntermediateDirectories: true)
+    try LocalCommand.git(repo.path, ["init"])
+    try LocalCommand.git(repo.path, ["config", "user.name", "Fixture"])
+    try LocalCommand.git(repo.path, ["config", "user.email", "fixture@example.invalid"])
+    try Data("base\n".utf8).write(to: repo.appending(path: "file.txt"))
+    try LocalCommand.git(repo.path, ["add", "."])
+    try LocalCommand.git(repo.path, ["-c", "commit.gpgsign=false", "commit", "-m", "Fixture"])
+    let harness = RuntimeHarness()
+    let service = try AgentService(directory: root, cliPath: "/test/cli", adminToken: "admin", runtimeFactory: harness.create)
+    let main = try await spawn(service, path: repo.path)
+    try await eventually { harness.runtime(main.id)?.count == 1 }
+    let runtime = try #require(harness.runtime(main.id))
+    runtime.handler(.text("Private intermediate reasoning that a worker should not inherit"))
+    let queued = await service.handle(.init(method: "agents.send", params: ["taskID": main.id.uuidString, "message": "Check accessibility"], token: "admin", id: "queued-audit"))
+    #expect(queued.error == nil)
+    let enabled = ServiceRequest(method: "task.multitask", params: ["taskID": main.id.uuidString, "enabled": "true"], token: "admin", id: "enable")
+    #expect(await service.handle(enabled).error == nil)
+    #expect(await service.handle(enabled).error == nil)
+    let state = try await snapshot(service)
+    let child = try #require(state.tasks.first { $0.parentID == main.id })
+    #expect(state.tasks.count == 2)
+    #expect(child.workspace != main.workspace)
+    #expect(child.managedWorkspaceID != nil)
+    #expect(child.entries.allSatisfy { !$0.text.contains("Private intermediate") })
+    #expect(child.objective.contains("Check accessibility"))
+    #expect(child.forkOrigin == nil)
+    #expect(child.reviewBase != nil)
+    #expect(state.tasks.first { $0.id == main.id }?.messages.last?.delegatedTaskID == child.id)
+    #expect(runtime.count == 1)
+    try await eventually { harness.runtime(child.id)?.count == 1 }
+    #expect(harness.runtime(child.id)?.lock.withLock { harness.runtime(child.id)?.prompts.first?.contains("Private intermediate") } == false)
+    harness.runtime(child.id)?.finish("Accessibility findings")
+    try await eventually { try await snapshot(service).tasks.first { $0.id == main.id }?.messages.contains(where: { $0.sender == child.id }) == true }
+    #expect(runtime.count == 1)
+    harness.runtime(child.id)?.handler(.status(.completed, "Duplicate terminal event"))
+    runtime.finish("Main work complete")
+    try await eventually { runtime.count == 2 }
+    #expect(try await snapshot(service).tasks.first { $0.id == main.id }?.messages.filter { $0.sender == child.id }.count == 1)
+}
+
+@Test func forksUseSelectedBoundaryAndSteeringWaitsForCancellation() async throws {
+    let root = try serviceFolder(); defer { try? FileManager.default.removeItem(at: root) }
+    let harness = RuntimeHarness()
+    let service = try AgentService(directory: root, cliPath: "/test/cli", adminToken: "admin", runtimeFactory: harness.create)
+    let main = try await spawn(service, path: root.path)
+    try await eventually { harness.runtime(main.id)?.count == 1 }
+    let runtime = try #require(harness.runtime(main.id))
+    runtime.finish("Answer at boundary")
+    try await eventually { try await snapshot(service).tasks.first?.status == .completed }
+    let source = try #require(try await snapshot(service).tasks.first)
+    let boundary = try #require(source.entries.last { $0.kind == .assistant })
+    let followup = await service.handle(.init(method: "agents.send", params: ["taskID": main.id.uuidString, "message": "Future request"], token: "admin"))
+    #expect(followup.error == nil)
+    try await eventually { runtime.count == 2 }
+    var params = ["sourceID": main.id.uuidString, "entryID": boundary.id.uuidString, "sourceDigest": StableIdentity.hash(boundary.text), "objective": "Explore another approach", "isolate": "false"]
+    let request = ServiceRequest(method: "agents.fork", params: params, token: "admin", id: "fork-boundary")
+    let forked = await service.handle(request)
+    let fork = try JSONDecoder().decode(AgentTask.self, from: Data(try #require(forked.value).utf8))
+    let repeated = await service.handle(request)
+    #expect(repeated.error == nil, "\(repeated.error ?? "")")
+    #expect(try await snapshot(service).tasks.count == 2)
+    #expect(fork.forkOrigin?.entryID == boundary.id)
+    #expect(fork.forkOrigin?.inheritedCount == (try ChatFork.prefix(source.entries, through: boundary.id)).count)
+    #expect(!fork.entries.contains { $0.text == "Future request" })
+    #expect(!fork.entries.contains { $0.id == boundary.id })
+    #expect(fork.nativeID == nil)
+    params["sourceDigest"] = "stale"
+    #expect(await service.handle(.init(method: "agents.fork", params: params, token: "admin")).error != nil)
+    let steer = ServiceRequest(method: "agents.steer", params: ["taskID": main.id.uuidString, "message": "Prioritize the bug"], token: "admin", id: "steer")
+    #expect(await service.handle(steer).error == nil)
+    try await eventually { runtime.count == 3 }
+    #expect(await service.handle(steer).error == nil)
+    #expect(runtime.count == 3)
+    #expect(runtime.lock.withLock { runtime.prompts.last?.contains("Prioritize the bug") } == true)
+    let token = try #require(harness.token(main.id))
+    #expect(await service.handle(.init(method: "task.multitask", params: ["taskID": main.id.uuidString, "enabled": "true"], token: token)).error != nil)
+}
