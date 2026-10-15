@@ -89,7 +89,8 @@ struct NativeBrowserPane: View {
                 }
                 if browser.isLoading { ProgressView().controlSize(.mini) }
             }
-            .buttonStyle(.plain).padding(10)
+            .buttonStyle(AppButtonStyle()).glassControls().padding(10)
+            .materialPanel(color: Surface.dock)
             Divider()
             if let error = browser.error {
                 ContentUnavailableView {

@@ -121,8 +121,7 @@ struct QuickChatView: View {
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Surface.text)
                 Text(detail).font(.system(size: 11)).foregroundStyle(Surface.muted).lineLimit(2)
             }.frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading).padding(16)
-                .background(Surface.raised.opacity(0.8), in: RoundedRectangle(cornerRadius: Design.cardRadius))
-                .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(Surface.stroke.opacity(0.8)))
+                .glassSurface(radius: Design.cardRadius, interactive: true)
         }.buttonStyle(.plain).help("Add a starting prompt; edit it before sending")
     }
     private func addFile() {

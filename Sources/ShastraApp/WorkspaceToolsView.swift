@@ -98,7 +98,8 @@ struct WorkspaceToolsView: View {
                     appTab("Terminal", symbol: "terminal", selected: tools.tab == .terminal) { tools.openTerminal() }
                     appTab("Info", symbol: "info.circle", selected: tools.tab == .inspector) { tools.tab = .inspector }
                 }.padding(.horizontal, Design.headerInset)
-            }.frame(height: Design.headerHeight)
+            }.glassControls().frame(height: Design.headerHeight)
+                .materialPanel(color: Surface.dock)
                 .overlay(alignment: .bottom) { Surface.stroke.opacity(0.6).frame(height: 1) }
             Group {
                 switch tools.tab {
@@ -141,7 +142,7 @@ struct WorkspaceToolsView: View {
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Surface.dock)
+        .materialPanel(color: Surface.dock)
     }
 
     private func appTab(_ title: String, symbol: String, selected: Bool, action: @escaping () -> Void) -> some View {
@@ -153,7 +154,8 @@ struct WorkspaceToolsView: View {
                 .font(.system(size: 12, weight: selected ? .semibold : .regular)).lineLimit(1)
                 .foregroundStyle(selected ? Surface.accent : Surface.muted)
                 .padding(.horizontal, 10).frame(height: 28)
-                .background(selected ? Surface.selected.opacity(0.55) : .clear, in: RoundedRectangle(cornerRadius: 7))
+                .glassSurface(radius: 9, interactive: true, tint: selected ? Surface.selected : nil,
+                              opaque: selected ? Surface.selected : Surface.raised)
         }.buttonStyle(.plain).accessibilityLabel(title).help(title)
     }
 }

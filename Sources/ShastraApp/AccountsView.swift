@@ -93,7 +93,7 @@ struct AccountsView: View {
                         .font(.system(size: 10)).foregroundStyle(Surface.muted)
                 }
             }.padding(24)
-        }.frame(width: 650, height: 600).background(Surface.canvas)
+        }.frame(width: 650, height: 600).materialPanel(color: Surface.canvas)
         .interactiveDismissDisabled(model.isAccountBusy)
         .onChange(of: model.accountProvider) { _, _ in model.accountError = nil; model.accountStatus = nil }
         .sheet(isPresented: Binding(get: { editing.renaming != nil }, set: { if !$0 { editing.renaming = nil } })) {
@@ -132,7 +132,7 @@ struct AccountsView: View {
             Spacer()
             if isDefault { Text("Default").font(.system(size: 10, weight: .medium)).foregroundStyle(Surface.muted) }
             else { Button("Use by default") { model.useAccountByDefault(nil) }.buttonStyle(.borderless).font(.system(size: 11)) }
-        }.padding(16).background(Surface.raised, in: RoundedRectangle(cornerRadius: Design.cardRadius))
+        }.padding(16).materialPanel(radius: Design.cardRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(isDefault ? Surface.accent.opacity(0.4) : Surface.stroke))
             .disabled(model.isAccountBusy)
     }
@@ -159,7 +159,7 @@ struct AccountsView: View {
             } label: { Image(systemName: "ellipsis").frame(width: 22, height: 24) }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .accessibilityLabel("Options for \(account.label)")
-        }.padding(16).background(Surface.raised, in: RoundedRectangle(cornerRadius: Design.cardRadius))
+        }.padding(16).materialPanel(radius: Design.cardRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.cardRadius).stroke(isDefault ? Surface.accent.opacity(0.4) : Surface.stroke))
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(isDefault ? Surface.muted.opacity(0.5) : Surface.stroke))
             .disabled(model.isAccountBusy)

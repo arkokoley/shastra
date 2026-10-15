@@ -17,9 +17,15 @@ The app shares the website's cream canvas (`#F6F4EE`), olive ink (`#242820`), te
 
 Use 8-point control corners, 14-point cards, and 20-point composers. The reading surface stays quiet; only the composer receives a restrained shadow and a stronger focus border. Typography uses the system font for controls and reading, a bold lowercase `shastra.` wordmark, and Georgia for the new-chat heading, echoing the website's serif display accent.
 
-`Sources/ShastraApp/Resources/ShastraMark.svg` matches `website/favicon.svg`. Keep these assets synchronized when changing the logo. The app loads its mark from a Swift package resource bundle; packaging includes that bundle and generates the Dock icon from the same SVG using `Scripts/generate-app-icon.swift`.
+The brand mark is the actual **श** glyph on a terracotta rounded square, matching the website header. `Sources/ShastraApp/Resources/ShastraMark.svg` matches `website/favicon.svg`. Keep these assets synchronized when changing the logo. The app loads its mark from a Swift package resource bundle; packaging includes that bundle and generates the Dock icon from the same SVG using `Scripts/generate-app-icon.swift`.
 
 The compact Shastra mark, selected-row indicator, keyboard hints, and account/status treatments recur across the app. Keep status and provider menus secondary to the send action. Avoid decorative motion; keyboard focus and native accessibility behavior remain available.
+
+## Glass and materials
+
+On macOS 26 and later, custom action buttons, workspace tool tabs, composer context pills, and new-chat starter controls use Apple's native `glassEffect` with interactive feedback. Adjacent header and browser controls are grouped with `GlassEffectContainer`. Large navigation surfaces use `NSVisualEffectView` sidebar material; toolbars, the composer, account panels, the command palette, runtime library, and agent navigation use regular translucent material so the glass control layer remains distinct from readable content. Conversation messages, code, and web content retain their reading surfaces.
+
+macOS 15–25 use native material fallbacks. Reduce Transparency and Increase Contrast replace custom glass and material surfaces with semantic opaque fills. Light and dark appearance continue to follow the existing appearance setting. The Shastra terracotta accent and **श** mark remain consistent across appearances.
 
 ## Interaction
 

@@ -92,7 +92,7 @@ struct UsageStatusBar: View {
                 .accessibilityValue(windows.isEmpty ? (usage.loading ? "Loading limits" : "Limits unavailable") : windows.map { "\($0.label) \($0.remainingPercent)% remaining" }.joined(separator: ", "))
                 .popover(isPresented: $usage.expanded, arrowEdge: .top) { details }
         }.font(.system(size: 11)).padding(.horizontal, 14).frame(height: 30)
-            .background(Surface.sidebar).overlay(alignment: .top) { Surface.stroke.opacity(0.7).frame(height: 1) }
+            .materialPanel(color: Surface.sidebar).overlay(alignment: .top) { Surface.stroke.opacity(0.7).frame(height: 1) }
             .task(id: context) {
                 while !Task.isCancelled {
                     await usage.refresh(context, store: app.accountStore)

@@ -166,9 +166,10 @@ struct WorkspaceView: View {
             } label: { Image(systemName: "ellipsis").font(.system(size: 15)) }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .frame(width: 25).help("Chat and appearance options")
-        }.padding(.horizontal, Design.headerInset)
+        }.glassControls().padding(.horizontal, Design.headerInset)
             .padding(.leading, chrome.showsSidebar ? 0 : Design.windowControlsInset)
             .frame(height: Design.headerHeight)
+            .materialPanel(color: Surface.sidebar)
             .overlay(alignment: .bottom) { Surface.stroke.opacity(0.6).frame(height: 1) }
     }
 
@@ -311,7 +312,7 @@ struct WorkspaceView: View {
                     .help("Accounts").accessibilityLabel("Accounts")
             }.padding(.horizontal, 18).frame(height: 66)
         }
-        .background(Surface.sidebar)
+        .glassSidebar()
         .overlay(alignment: .trailing) { Surface.stroke.opacity(0.65).frame(width: 1) }
     }
 
@@ -358,8 +359,10 @@ struct WorkspaceView: View {
 
 private struct ChromeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        HoverSurface(content: configuration.label, pressed: configuration.isPressed, radius: 7)
+        configuration.label
             .frame(width: 30, height: 30)
+            .glassSurface(radius: 9, interactive: true)
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
 

@@ -74,7 +74,7 @@ struct AgentBoardView: View {
                                 taskCard(task).tag(task.id).contextMenu { ChatOrganizationMenu(id: task.id, title: task.title, active: task.status.isActive) }
                             }
                         }.listStyle(.sidebar)
-                    }.padding(.top, 14).padding(.horizontal, 12).frame(minWidth: 240, idealWidth: 280, maxWidth: 330).background(Surface.dock)
+                    }.padding(.top, 14).padding(.horizontal, 12).frame(minWidth: 240, idealWidth: 280, maxWidth: 330).materialPanel(color: Surface.dock)
                     if let task = board.selected, board.tasks.contains(where: { $0.id == task.id }) {
                         AgentTaskDetail(board: board, task: task, spawn: { sideChat in ui.parent = task; ui.sideChat = sideChat; ui.showNew = true }).id(task.id)
                     } else {
@@ -121,7 +121,7 @@ struct AgentBoardView: View {
                 Text(Design.age(task.updatedAt)).lineLimit(1)
             }.font(.system(size: 10)).foregroundStyle(Surface.muted)
         }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
-            .background(Surface.raised, in: RoundedRectangle(cornerRadius: 10))
+            .materialPanel(radius: 10)
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(board.selectedID == task.id ? Surface.accent.opacity(0.6) : Surface.stroke.opacity(0.6)))
             .padding(.vertical, 2)
     }

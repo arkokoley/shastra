@@ -79,6 +79,90 @@ struct ShastraWordmark: View {
     }
 }
 
+// Keep refractive Liquid Glass on the control layer. Larger panels use native
+// materials so conversations and code remain stable reading surfaces.
+private struct GlassSurface: ViewModifier {
+    var radius: CGFloat
+    var interactive: Bool
+    var tint: Color?
+    var opaque: Color
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if reduceTransparency || contrast == .increased {
+            content.background(opaque, in: RoundedRectangle(cornerRadius: radius))
+                .overlay(RoundedRectangle(cornerRadius: radius).stroke(Surface.stroke))
+        } else if #available(macOS 26.0, *) {
+            content.glassEffect(.regular.tint(tint).interactive(interactive),
+                                in: RoundedRectangle(cornerRadius: radius))
+        } else {
+            content.background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius))
+                .background(tint ?? Color.clear, in: RoundedRectangle(cornerRadius: radius))
+                .overlay(RoundedRectangle(cornerRadius: radius).stroke(Surface.stroke.opacity(0.65)))
+        }
+    }
+}
+
+private struct MaterialPanel: ViewModifier {
+    var radius: CGFloat
+    var color: Color
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    @ViewBuilder func body(content: Content) -> some View {
+        if reduceTransparency || contrast == .increased {
+            content.background(color, in: RoundedRectangle(cornerRadius: radius))
+        } else {
+            content.background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: radius))
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius))
+        }
+    }
+}
+
+private struct SidebarMaterial: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .sidebar
+        view.blendingMode = .behindWindow
+        view.state = .followsWindowActiveState
+        return view
+    }
+    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+}
+
+private struct GlassSidebar: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    @ViewBuilder func body(content: Content) -> some View {
+        if reduceTransparency || contrast == .increased {
+            content.background(Surface.sidebar)
+        } else {
+            content.background(Surface.sidebar.opacity(0.18))
+                .background(SidebarMaterial())
+        }
+    }
+}
+
+private struct GlassControls: ViewModifier {
+    @ViewBuilder func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            GlassEffectContainer(spacing: 8) { content }
+        } else { content }
+    }
+}
+
+extension View {
+    func glassSurface(radius: CGFloat = Design.controlRadius, interactive: Bool = false,
+                      tint: Color? = nil, opaque: Color = Surface.raised) -> some View {
+        modifier(GlassSurface(radius: radius, interactive: interactive, tint: tint, opaque: opaque))
+    }
+    func materialPanel(radius: CGFloat = 0, color: Color = Surface.raised) -> some View {
+        modifier(MaterialPanel(radius: radius, color: color))
+    }
+    func glassSidebar() -> some View { modifier(GlassSidebar()) }
+    func glassControls() -> some View { modifier(GlassControls()) }
+}
+
 struct AppButtonStyle: ButtonStyle {
     enum Kind { case primary, secondary, quiet }
     var kind: Kind = .secondary
@@ -87,9 +171,10 @@ struct AppButtonStyle: ButtonStyle {
         configuration.label.font(.system(size: 12, weight: .semibold))
             .padding(.horizontal, 12).frame(minHeight: 32)
             .foregroundStyle(kind == .primary ? Surface.onAccent : Surface.text)
-            .background(kind == .primary ? Surface.accent : kind == .secondary ? Surface.raised : Color.clear,
+            .background(kind == .primary ? Surface.accent : Color.clear,
                         in: RoundedRectangle(cornerRadius: Design.controlRadius))
-            .overlay(RoundedRectangle(cornerRadius: Design.controlRadius).stroke(kind == .secondary ? Surface.stroke : .clear))
+            .glassSurface(interactive: true, tint: kind == .primary ? Surface.accent : nil,
+                          opaque: kind == .primary ? Surface.accent : Surface.raised)
             .opacity(enabled ? (configuration.isPressed ? 0.72 : 1) : 0.45)
             .contentShape(RoundedRectangle(cornerRadius: Design.controlRadius))
     }
@@ -119,7 +204,7 @@ struct KeyboardHint: View {
 private struct ComposerSurface: ViewModifier {
     let focused: Bool
     func body(content: Content) -> some View {
-        content.background(Surface.raised, in: RoundedRectangle(cornerRadius: Design.composerRadius))
+        content.materialPanel(radius: Design.composerRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.composerRadius)
                 .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1))
             .shadow(color: Color.black.opacity(0.045), radius: 18, x: 0, y: 6)

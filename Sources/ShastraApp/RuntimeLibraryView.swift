@@ -110,7 +110,7 @@ struct RuntimeLibraryView: View {
             }
             Divider()
             NotificationSettings()
-        }.padding(24).frame(width: 890).background(Surface.canvas)
+        }.padding(24).frame(width: 890).materialPanel(color: Surface.canvas)
             .task(id: "\(ui.source):\(ui.project):\(base.path)") {
                 ui.selected = nil; ui.plan = nil; ui.status = ""
                 do { ui.items = try await ui.library.inventory(source) } catch { ui.items = []; ui.status = error.localizedDescription }

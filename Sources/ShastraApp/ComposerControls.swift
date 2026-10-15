@@ -92,12 +92,12 @@ struct ComposerActions: View {
                 HStack(spacing: 6) { Text("Commit & Push"); Image(systemName: "chevron.down").font(.system(size: 9)) }
             }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Surface.raised, in: Capsule()).overlay(Capsule().stroke(Surface.stroke))
+                .glassSurface(radius: 18, interactive: true)
                 .help("Compose a commit, push, or pull request action")
             Button("Debug CI Failure") {
                 compose("Inspect the failing CI checks for the current branch or pull request, identify the cause, fix it, and run the relevant checks.")
             }.buttonStyle(.plain).padding(.horizontal, 12).padding(.vertical, 7)
-                .background(Surface.raised, in: Capsule()).overlay(Capsule().stroke(Surface.stroke))
+                .glassSurface(radius: 18, interactive: true)
                 .help("Compose a request to debug failing CI")
         }.font(.system(size: 12)).foregroundStyle(Surface.muted)
     }

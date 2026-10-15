@@ -142,7 +142,7 @@ struct CommandPaletteView: View {
                 Button(model.indexingStatus.hasPrefix("Indexing history") ? "Pause" : "Index history") { model.toggleHistoryIndexing() }.buttonStyle(.plain)
                 Text(state.category == .files ? "Files in \(tools.root.lastPathComponent)" : "\(results.count) results")
             }.font(.system(size: 10)).foregroundStyle(Surface.muted).padding(.horizontal, 20).frame(height: 38)
-        }.frame(width: 670, height: 560).background(Surface.canvas)
+        }.frame(width: 670, height: 560).materialPanel(color: Surface.canvas)
         .task(id: "history:\(state.query):\(model.indexingRevision)") {
             state.messages = []
             guard state.query.count >= 2 else { return }
