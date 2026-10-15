@@ -146,7 +146,7 @@ private struct GlassSidebar: ViewModifier {
 private struct GlassControls: ViewModifier {
     @ViewBuilder func body(content: Content) -> some View {
         if #available(macOS 26.0, *) {
-            GlassEffectContainer(spacing: 8) { content }
+            GlassEffectContainer(spacing: 0) { content }
         } else { content }
     }
 }
@@ -163,20 +163,37 @@ extension View {
     func glassControls() -> some View { modifier(GlassControls()) }
 }
 
-struct AppButtonStyle: ButtonStyle {
+/// Delegate interaction, focus, disabled state, and rendering to Apple's controls.
+struct AppButtonStyle: PrimitiveButtonStyle {
     enum Kind { case primary, secondary, quiet }
     var kind: Kind = .secondary
-    @Environment(\.isEnabled) private var enabled
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label.font(.system(size: 12, weight: .semibold))
-            .padding(.horizontal, 12).frame(minHeight: 32)
-            .foregroundStyle(kind == .primary ? Surface.onAccent : Surface.text)
-            .background(kind == .primary ? Surface.accent : Color.clear,
-                        in: RoundedRectangle(cornerRadius: Design.controlRadius))
-            .glassSurface(interactive: true, tint: kind == .primary ? Surface.accent : nil,
-                          opaque: kind == .primary ? Surface.accent : Surface.raised)
-            .opacity(enabled ? (configuration.isPressed ? 0.72 : 1) : 0.45)
-            .contentShape(RoundedRectangle(cornerRadius: Design.controlRadius))
+    var compact = false
+    @Environment(\.controlActiveState) private var activeState
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    @ViewBuilder func makeBody(configuration: Configuration) -> some View {
+        if #available(macOS 26.0, *), !reduceTransparency, contrast != .increased {
+            if kind == .primary {
+                button(configuration).buttonStyle(.glassProminent)
+            } else {
+                button(configuration).buttonStyle(.glass)
+            }
+        } else if kind == .primary {
+            button(configuration).buttonStyle(.borderedProminent)
+        } else {
+            button(configuration).buttonStyle(.bordered)
+        }
+    }
+    private func button(_ configuration: Configuration) -> some View {
+        Button(role: configuration.role, action: configuration.trigger) {
+            configuration.label
+                .foregroundStyle(kind == .primary && activeState == .key ? Surface.onAccent : Surface.text)
+        }
+            .font(.system(size: 12, weight: .medium))
+            .controlSize(compact ? .small : .regular)
+            .buttonBorderShape(.capsule)
+            .tint(Surface.accent)
     }
 }
 

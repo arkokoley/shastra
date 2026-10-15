@@ -74,7 +74,7 @@ struct WorkspaceToolsView: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 2) {
+                HStack(spacing: 8) {
                     appTab("Files", symbol: "doc", selected: (tools.tab == .files || tools.tab == .preview) && tools.selectedFile == nil) {
                         tools.showsExplorer = true
                         tools.tab = tools.selectedFile == nil ? .files : .preview

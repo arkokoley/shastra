@@ -198,7 +198,9 @@ struct ConversationAccountMenu: View {
                 Image(systemName: "person.crop.circle")
                 Text(model.accountLabel(for: conversation)).lineLimit(1).truncationMode(.middle).frame(maxWidth: 110)
             }.font(.system(size: 11))
-        }.menuStyle(.borderlessButton).fixedSize().help("Choose account")
+        }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .glassSurface(radius: 16, interactive: true).help("Choose account")
             .disabled([.running, .connecting, .waitingForApproval].contains(conversation.state))
             .accessibilityLabel("Account: \(model.accountLabel(for: conversation))")
     }

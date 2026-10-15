@@ -193,9 +193,7 @@ struct WorkspaceView: View {
                     Spacer()
                     Text("⌘N").font(.system(size: 11)).opacity(0.7)
                 }.padding(.horizontal, 12).frame(height: 40)
-                .foregroundStyle(Surface.onAccent)
-                .background(Surface.accent, in: RoundedRectangle(cornerRadius: 10))
-            }.buttonStyle(.plain).padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 6)
+            }.buttonStyle(AppButtonStyle(kind: .primary)).padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 6)
 
             Button { model.showNewConversation = false; model.showAgents.toggle() } label: {
                 HStack(spacing: 12) {
@@ -361,7 +359,7 @@ private struct ChromeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .frame(width: 30, height: 30)
-            .glassSurface(radius: 9, interactive: true)
+            .glassSurface(radius: 15, interactive: true)
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
@@ -440,9 +438,9 @@ private struct ProviderMark: View {
     var body: some View {
         Image(systemName: symbol)
             .font(.system(size: size * 0.43, weight: .medium))
-            .foregroundStyle(tint)
+            .foregroundStyle(Surface.accent)
             .frame(width: size, height: size)
-            .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: size * 0.28))
+            .glassSurface(radius: size * 0.28, tint: Surface.accent.opacity(0.08))
             .accessibilityLabel(provider.title)
     }
 }
@@ -584,7 +582,8 @@ private struct ConversationPane: View {
                         Button("Add workspace path") { model.draft += "\nWorkspace: \(conversation.workingDirectory)" }
                     } label: {
                         Image(systemName: "plus").font(.system(size: 16, weight: .light))
-                            .frame(width: 27, height: 27).background(Surface.hover, in: Circle())
+                            .frame(width: 28, height: 28)
+                            .glassSurface(radius: 14, interactive: true)
                     }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                         .help("Add context")
                     Menu {
@@ -603,21 +602,20 @@ private struct ConversationPane: View {
                             Image(systemName: "chevron.down").font(.system(size: 8))
                         }.font(.system(size: 12))
                     }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .glassSurface(radius: 16, interactive: true)
                     if AccountStore.providers.contains(conversation.provider) { ConversationAccountMenu(conversation: conversation) }
                     Spacer()
                     if [.running, .connecting, .waitingForApproval].contains(conversation.state) {
                         Button { model.cancel() } label: {
                             Image(systemName: "stop.fill").font(.system(size: 12))
-                                .foregroundStyle(Surface.canvas)
-                                .frame(width: 28, height: 28).background(Surface.text, in: Circle())
-                        }.buttonStyle(.plain).help("Stop agent")
+                                .frame(width: 22, height: 22)
+                        }.buttonStyle(AppButtonStyle(compact: true)).help("Stop agent")
                     } else {
                         Button { model.send() } label: {
                             Image(systemName: "arrow.up").font(.system(size: 15, weight: .semibold))
-                                .foregroundStyle(canSend ? Surface.onAccent : Surface.muted)
-                                .frame(width: 28, height: 28)
-                                .background(canSend ? Surface.accent : Surface.hover, in: Circle())
-                        }.buttonStyle(.plain).disabled(!canSend).help("Send message")
+                                .frame(width: 22, height: 22)
+                        }.buttonStyle(AppButtonStyle(kind: .primary, compact: true)).disabled(!canSend).help("Send message")
                     }
                 }.foregroundStyle(Surface.muted)
             }

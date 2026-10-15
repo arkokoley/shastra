@@ -35,9 +35,9 @@ struct ComposerContextBar: View {
                 }
             }
             HStack(spacing: 14) {
-                Button { ui.choosingFile = true } label: { Label("Reference file", systemImage: "at") }.buttonStyle(.plain)
-                Button { browse() } label: { Image(systemName: "paperclip") }.buttonStyle(.plain).help("Attach files")
-                Button { app.pasteContextImage(key: key) } label: { Label("Paste image", systemImage: "photo") }.buttonStyle(.plain)
+                Button { ui.choosingFile = true } label: { Label("Reference file", systemImage: "doc.badge.plus") }.buttonStyle(AppButtonStyle(compact: true))
+                Button { browse() } label: { Image(systemName: "paperclip") }.buttonStyle(AppButtonStyle(compact: true)).help("Attach files")
+                Button { app.pasteContextImage(key: key) } label: { Label("Paste image", systemImage: "photo.badge.plus") }.buttonStyle(AppButtonStyle(compact: true))
                 Spacer()
             }.font(.system(size: 11)).foregroundStyle(Surface.muted)
         }
