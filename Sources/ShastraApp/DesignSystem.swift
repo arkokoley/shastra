@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Shared semantic colors: warm surfaces, cool ink, and a single action accent.
+/// Website palette: cream surfaces, olive ink, and terracotta accents.
 /// Native controls retain keyboard navigation and system focus treatment.
 enum Surface {
     static func color(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -17,18 +17,18 @@ enum Surface {
             NSColor(white: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light, alpha: 1)
         })
     }
-    static let canvas = color(0xF8F9F7, 0x141C22)
-    static let sidebar = color(0xEEF1EE, 0x10171C)
-    static let dock = color(0xF3F5F2, 0x182229)
-    static let raised = color(0xFFFFFF, 0x202D35)
-    static let selected = color(0xDCEDE7, 0x23433F)
-    static let stroke = color(0xD8DFDC, 0x35444D)
-    static let muted = color(0x5D6C69, 0xA3B4B8)
-    static let text = color(0x20332F, 0xE8F0ED)
-    static let accent = color(0x087968, 0x71DCC2)
-    static let onAccent = color(0xFFFFFF, 0x10251F)
-    static let hover = color(0xE3EAE5, 0x2A3A40)
-    static let code = color(0xEDF2EF, 0x101A20)
+    static let canvas = color(0xF6F4EE, 0x1C1D19)
+    static let sidebar = color(0xF0F1E9, 0x181A16)
+    static let dock = color(0xE9ECDF, 0x23261F)
+    static let raised = color(0xFFFEFA, 0x292B24)
+    static let selected = color(0xE0E5D8, 0x383D30)
+    static let stroke = color(0xDCDED3, 0x424638)
+    static let muted = color(0x686C62, 0xB0B5A6)
+    static let text = color(0x242820, 0xF6F4EE)
+    static let accent = color(0xB74D2E, 0xF0A184)
+    static let onAccent = color(0xFFFEFA, 0x291B15)
+    static let hover = color(0xE9ECDF, 0x32362B)
+    static let code = color(0xF5F5EF, 0x181A16)
     static let warning = color(0x95600E, 0xF3BC61)
     static let danger = color(0xB63E42, 0xFF9297)
 }
@@ -54,14 +54,28 @@ enum Design {
 
 struct ShastraMark: View {
     var size: CGFloat = 38
+    private static let artwork: NSImage = {
+        guard let url = Bundle.module.url(forResource: "ShastraMark", withExtension: "svg"),
+              let image = NSImage(contentsOf: url) else {
+            preconditionFailure("Shastra logo resource is missing")
+        }
+        return image
+    }()
     var body: some View {
-        Image(systemName: "asterisk")
-            .font(.system(size: size * 0.49, weight: .medium))
-            .foregroundStyle(Surface.onAccent)
+        Image(nsImage: Self.artwork)
+            .resizable()
+            .interpolation(.high)
             .frame(width: size, height: size)
-            .background(LinearGradient(colors: [Surface.accent, Surface.accent.opacity(0.82)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
             .accessibilityHidden(true)
+    }
+}
+
+struct ShastraWordmark: View {
+    var size: CGFloat = 18
+    var body: some View {
+        (Text("shastra").foregroundColor(Surface.text) + Text(".").foregroundColor(Surface.accent))
+            .font(.system(size: size, weight: .bold)).tracking(-size * 0.04)
+            .accessibilityLabel("Shastra")
     }
 }
 

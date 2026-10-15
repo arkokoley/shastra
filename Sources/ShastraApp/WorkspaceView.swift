@@ -175,7 +175,8 @@ struct WorkspaceView: View {
     private var sidebar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Text("Shastra").font(.system(size: 14, weight: .semibold)).foregroundStyle(Surface.text)
+                ShastraMark(size: 24)
+                ShastraWordmark(size: 17)
                 Spacer()
                 Button { chrome.showsSidebar = false } label: { Image(systemName: "sidebar.left") }
                     .buttonStyle(ChromeButtonStyle()).help("Hide sidebar")
@@ -299,7 +300,7 @@ struct WorkspaceView: View {
             HStack(spacing: 11) {
                 ShastraMark(size: 30)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Shastra").font(.system(size: 13, weight: .medium))
+                    ShastraWordmark(size: 15)
                     Text(model.isScanning ? "Syncing conversations…" : "All agents · \(model.conversations.count) chats")
                         .font(.system(size: 11)).foregroundStyle(Surface.muted)
                 }

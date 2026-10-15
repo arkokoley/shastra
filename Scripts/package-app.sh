@@ -12,6 +12,11 @@ swift build -c release --product ShastraCLI
 bundle="$project_dir/dist/Shastra.app"
 mkdir -p "$bundle/Contents/MacOS"
 mkdir -p "$bundle/Contents/Resources/ThirdParty"
+icon_tmp=$(mktemp -d)
+trap 'rm -rf "$icon_tmp"' EXIT
+swift Scripts/generate-app-icon.swift Sources/ShastraApp/Resources/ShastraMark.svg "$icon_tmp/Shastra.iconset"
+iconutil -c icns "$icon_tmp/Shastra.iconset" -o "$bundle/Contents/Resources/Shastra.icns"
+rsync -a "$project_dir/.build/release/Shastra_ShastraApp.bundle" "$bundle/Contents/Resources/"
 for executable in Shastra ShastraService ShastraCLI; do
   cp "$project_dir/.build/release/$executable" "$bundle/Contents/MacOS/$executable.next"
   mv "$bundle/Contents/MacOS/$executable.next" "$bundle/Contents/MacOS/$executable"
@@ -34,6 +39,7 @@ cat > "$bundle/Contents/Info.plist" <<'PLIST'
   <key>CFBundleIdentifier</key><string>dev.shastra.personal</string>
   <key>CFBundleExecutable</key><string>Shastra</string>
   <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleIconFile</key><string>Shastra</string>
   <key>CFBundleShortVersionString</key><string>0.5.3</string>
   <key>CFBundleVersion</key><string>9</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>

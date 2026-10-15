@@ -18,7 +18,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "ShastraCore", dependencies: [.product(name: "TOMLDecoder", package: "TOMLDecoder"), .product(name: "GRDB", package: "GRDB.swift")]),
-        .executableTarget(name: "ShastraApp", dependencies: ["ShastraCore", .product(name: "SwiftTerm", package: "SwiftTerm")]),
+        .executableTarget(name: "ShastraApp", dependencies: ["ShastraCore", .product(name: "SwiftTerm", package: "SwiftTerm")], resources: [.copy("Resources/ShastraMark.svg")]),
         .executableTarget(name: "ShastraSelfTest", dependencies: ["ShastraCore", .product(name: "SwiftTerm", package: "SwiftTerm")]),
         .executableTarget(name: "ShastraService", dependencies: ["ShastraCore"]),
         .executableTarget(name: "ShastraCLI", dependencies: ["ShastraCore"]),

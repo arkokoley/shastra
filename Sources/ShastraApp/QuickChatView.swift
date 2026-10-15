@@ -17,8 +17,12 @@ struct QuickChatView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 9) {
+                        ShastraMark(size: 32)
+                        ShastraWordmark(size: 23)
+                    }.padding(.bottom, 14)
                     Text("What will you build next?")
-                        .font(.system(size: 24, weight: .semibold, design: .rounded)).tracking(-0.7)
+                        .font(.custom("Georgia", size: 28)).tracking(-0.7)
                         .foregroundStyle(Surface.text)
                     Text("A fresh idea, a stubborn bug, or a better way to do things.")
                         .font(.system(size: 14)).foregroundStyle(Surface.muted)
