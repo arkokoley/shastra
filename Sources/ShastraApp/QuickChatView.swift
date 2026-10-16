@@ -76,7 +76,7 @@ struct QuickChatView: View {
                         ModelPicker(provider: app.selectedProvider, model: $app.newModel, accountID: app.newAccountID, workspace: app.workingDirectory)
                             .font(.system(size: 12)).foregroundStyle(Surface.muted)
                         Spacer(minLength: 8)
-                        Toggle("Keep working when the window closes", isOn: $app.newChatUsesService).font(.caption)
+                        Toggle("Keep working when the window closes", isOn: $app.newChatUsesService).toggleStyle(MicroCheckStyle()).font(.caption)
                     }
                     ComposerWorkspaceBar(path: app.workingDirectory, isNew: true, background: app.newChatUsesService)
                     HStack {
@@ -123,7 +123,7 @@ struct QuickChatView: View {
                 Text(detail).font(.system(size: 11)).foregroundStyle(Surface.muted).lineLimit(2)
             }.frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading).padding(16)
                 .glassSurface(radius: Design.cardRadius, interactive: true)
-        }.buttonStyle(.plain).help("Add a starting prompt; edit it before sending")
+        }.buttonStyle(MicroPressStyle()).help("Add a starting prompt; edit it before sending")
     }
     private func addFile() {
         let panel = NSOpenPanel()

@@ -55,11 +55,10 @@ struct GitChangesPane: View {
                 Button(state.trace ? "Show changes" : "Trace") { state.trace.toggle() }.buttonStyle(AppButtonStyle(compact: true))
                 Button { state.refresh(root: root, base: base) } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(AppButtonStyle(compact: true)).disabled(state.busy)
             }.padding(12)
-            Picker("Review scope", selection: $state.scope) {
-                Text("Unstaged").tag(ReviewScope.working)
-                Text("Staged").tag(ReviewScope.staged)
-                if base != nil { Text("Task changes").tag(ReviewScope.task) }
-            }.pickerStyle(.segmented).padding(.horizontal, 12).padding(.bottom, 10)
+            MicroSegment(label: "Review scope", selection: $state.scope, options:
+                [.init(value: .working, title: "Unstaged"), .init(value: .staged, title: "Staged")]
+                + (base == nil ? [] : [.init(value: .task, title: "Task changes")]))
+                .padding(.horizontal, 12).padding(.bottom, 10)
             if let error = state.error { Text(error).font(.caption).foregroundStyle(Surface.danger).padding(10).textSelection(.enabled) }
             Divider()
             if state.trace { trace }

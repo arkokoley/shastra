@@ -194,6 +194,7 @@ struct AppButtonStyle: PrimitiveButtonStyle {
             .controlSize(compact ? .small : .regular)
             .buttonBorderShape(.capsule)
             .tint(Surface.accent)
+            .microLift()
     }
 }
 
@@ -220,11 +221,13 @@ struct KeyboardHint: View {
 
 private struct ComposerSurface: ViewModifier {
     let focused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     func body(content: Content) -> some View {
         content.materialPanel(radius: Design.composerRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.composerRadius)
                 .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1))
-            .shadow(color: Color.black.opacity(0.045), radius: 18, x: 0, y: 6)
+            .shadow(color: focused ? Surface.accent.opacity(0.10) : Color.black.opacity(0.045), radius: focused ? 22 : 18, x: 0, y: 6)
+            .animation(reduceMotion ? nil : MicroMotion.settle, value: focused)
     }
 }
 

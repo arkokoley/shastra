@@ -260,8 +260,8 @@ private struct FileTreeRow: View {
                 } else {
                     Color.clear.frame(width: 14)
                 }
-                Image(systemName: isDirectory ? "folder" : FileIcon.symbol(for: url))
-                    .font(.system(size: 12)).foregroundStyle(Surface.muted).frame(width: 15)
+                if isDirectory { MicroFolderIcon(expanded: state.expanded) }
+                else { Image(systemName: FileIcon.symbol(for: url)).font(.system(size: 12)).foregroundStyle(Surface.muted).frame(width: 16) }
                 Text(depth == 0 ? url.lastPathComponent : url.lastPathComponent)
                     .font(.system(size: 12)).lineLimit(1)
                 Spacer(minLength: 0)

@@ -19,10 +19,10 @@ struct AgentBoardView: View {
                 Spacer()
                 Button { ui.showWorkspaces.toggle() } label: { Image(systemName: "folder.badge.gearshape") }
                     .buttonStyle(AppButtonStyle()).help("Manage workspaces")
-                Picker("Agent layout", selection: $ui.boardMode) {
-                    Image(systemName: "list.bullet").tag(false)
-                    Image(systemName: "rectangle.split.3x1").tag(true)
-                }.pickerStyle(.segmented).frame(width: 78).labelsHidden()
+                MicroSegment(label: "Agent layout", selection: $ui.boardMode, options: [
+                    .init(value: false, title: "List", symbol: "list.bullet"),
+                    .init(value: true, title: "Board", symbol: "rectangle.split.3x1")
+                ]).frame(width: 84)
                 Button { app.beginNewChat(background: true) } label: { Label("New agent", systemImage: "plus") }
                     .buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut("n", modifiers: [.command, .shift])
             }.padding(.horizontal, Design.headerInset).padding(.vertical, 8)
@@ -110,7 +110,7 @@ struct AgentBoardView: View {
                 Text(app.title(task.id, fallback: task.title)).font(.system(size: 13, weight: .semibold)).foregroundStyle(Surface.text).lineLimit(2)
             }
             HStack(spacing: 6) {
-                StatusPill(title: task.status.displayName, symbol: task.status.symbol, color: task.status.color)
+                AgentStatusPill(status: task.status)
                 Spacer()
                 if !task.approvals.isEmpty { Image(systemName: "exclamationmark.bubble.fill").foregroundStyle(Surface.warning).help("Approval needed") }
             }
@@ -136,6 +136,7 @@ private struct AgentTaskDetail: View {
     @StateObject private var ui = TaskDetailState()
     @StateObject private var workspaceTools = WorkspaceToolsModel()
     @ViewState private var followupMode = FollowupMode.queue
+    @FocusState private var composerFocused: Bool
     private var conversation: Conversation {
         var value = Conversation(provider: task.provider, workingDirectory: task.workspace)
         value.id = task.id; value.title = task.title; value.entries = task.entries; value.vendorSessionID = task.nativeID
@@ -148,8 +149,11 @@ private struct AgentTaskDetail: View {
                 VStack(alignment: .leading, spacing: 7) {
                     Text(app.title(task.id, fallback: task.title)).font(.system(size: 16, weight: .semibold)).lineLimit(2)
                     HStack(spacing: 8) {
-                        StatusPill(title: task.status.displayName, symbol: task.status.symbol, color: task.status.color)
+                        AgentStatusPill(status: task.status)
                         Text(task.provider.title).font(.caption).foregroundStyle(Surface.muted)
+                        if task.status == .running, let start = task.messages.last(where: { $0.dispatchedAt != nil })?.dispatchedAt {
+                            MicroActivityClock(startedAt: start)
+                        }
                     }
                 }
                 Spacer()
@@ -189,7 +193,8 @@ private struct AgentTaskDetail: View {
                                     .accessibilityIdentifier("copy-message-" + entry.id.uuidString)
                             }
                             if entry.kind == .assistant { MarkdownMessage(text: entry.text) }
-                            else { Text(entry.text).font(entry.kind == .tool ? .system(.caption, design: .monospaced) : .body).textSelection(.enabled) }
+                            else if entry.kind == .tool { MicroToolTrace(entries: [entry]) }
+                            else { Text(entry.text).font(.body).textSelection(.enabled) }
                             MessageActions(sourceID: task.id, entry: entry)
                         }.frame(maxWidth: Design.readingWidth, alignment: .leading)
                             .padding(entry.kind == .user ? 14 : 0)
@@ -229,21 +234,23 @@ private struct AgentTaskDetail: View {
                 ComposerActions(draft: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }))
             }
             VStack(alignment: .leading, spacing: 8) {
-                Picker("Send as", selection: $followupMode) { ForEach(FollowupMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
-                    .pickerStyle(.menu).font(.caption)
+                MicroSegment(label: "Send as", selection: $followupMode, options: [
+                    .init(value: .queue, title: "Queue"), .init(value: .parallel, title: "Run alongside"), .init(value: .steer, title: "Steer")
+                ])
                 ForEach(task.messages.filter { $0.state == .queued }) { message in
                     HStack { Label(message.text, systemImage: "clock").lineLimit(2).font(.caption); Spacer(); Button { action("message.cancel", ["messageID": message.id.uuidString]) } label: { Image(systemName: "xmark") }.buttonStyle(.plain) }
                 }
                 TextField(task.status.isActive ? "Queue a follow-up…" : "Message this agent…", text: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }), axis: .vertical)
                     .lineLimit(2...8).textFieldStyle(.plain)
                     .modifier(ComposerImagePaste(key: task.id.uuidString))
+                    .focused($composerFocused)
                 HStack {
                     Text("\(task.provider.title) · \(task.model ?? "Default model") · \(task.column.rawValue)").font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Button(followupMode == .parallel ? "Run alongside" : followupMode == .steer ? "Redirect" : task.status.isActive ? "Queue" : "Send") { board.send(task, files: app.experience.attachments[task.id.uuidString] ?? [], mode: followupMode) { app.experience.attachments[task.id.uuidString] = [] } }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
                         .disabled(board.busy || (followupMode == .steer && task.status != .running) || task.messages.contains { $0.state == .unknown } || (board.drafts[task.id.uuidString] ?? "").isEmpty)
                 }
-            }.padding(16).composerSurface()
+            }.padding(16).composerSurface(focused: composerFocused)
             ComposerWorkspaceBar(path: task.workspace, isNew: false, background: true)
             }.padding(14)
         }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)

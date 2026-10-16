@@ -196,7 +196,7 @@ private struct AnnotationList: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Toggle(isOn: Binding(get: { selected.contains(value.id) }, set: { if $0 { selected.insert(value.id) } else { selected.remove(value.id) } })) {
                                 Text(value.resolved ? "Resolved" : "Open comment").font(.headline)
-                            }.disabled(value.resolved)
+                            }.toggleStyle(MicroCheckStyle()).disabled(value.resolved)
                             Text(value.anchor.quote).font(.callout).textSelection(.enabled).padding(10).background(Surface.selected, in: RoundedRectangle(cornerRadius: 8))
                             Text(value.comment).textSelection(.enabled)
                             if let entry = app.chatSource(source.id)?.entries.first(where: { $0.id == value.anchor.entryID }), !value.anchor.matches(entry) {
@@ -339,7 +339,7 @@ struct MultitaskControls: View {
             HStack {
                 Toggle("Multitask", isOn: Binding(get: { task.multitasking == true }, set: { enabled in
                     board.perform("task.multitask", params: ["taskID": task.id.uuidString, "enabled": String(enabled)])
-                })).toggleStyle(.switch).controlSize(.small).disabled(board.busy)
+                })).toggleStyle(MicroSwitchStyle()).controlSize(.small).disabled(board.busy)
                 Text("\(children.filter { $0.status.isActive }.count) working · \(children.filter { $0.status == .queued }.count) waiting")
                     .font(.caption).foregroundStyle(Surface.muted)
                 Spacer()

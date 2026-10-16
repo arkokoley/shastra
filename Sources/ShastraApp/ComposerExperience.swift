@@ -13,6 +13,7 @@ import UniformTypeIdentifiers
 
 struct ComposerContextBar: View {
     @EnvironmentObject private var app: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @StateObject private var ui = ComposerAccessoryState()
     let key: String
     let workspace: String
@@ -30,6 +31,7 @@ struct ComposerContextBar: View {
                                 Button { app.experience.attachments[key]?.removeAll { $0 == file } } label: { Image(systemName: "xmark") }
                                     .buttonStyle(.plain).help("Remove attachment")
                             }.font(.caption).padding(7).background(Surface.selected, in: Capsule())
+                                .transition(reduceMotion ? .opacity : .scale(scale: 0.9).combined(with: .opacity))
                         }
                     }
                 }
@@ -41,6 +43,7 @@ struct ComposerContextBar: View {
                 Spacer()
             }.font(.system(size: 11)).foregroundStyle(Surface.muted)
         }
+        .animation(reduceMotion ? nil : MicroMotion.settle, value: app.experience.attachments[key] ?? [])
         .popover(isPresented: $ui.choosingFile) {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("Find a workspace file…", text: $ui.fileQuery).textFieldStyle(.roundedBorder)

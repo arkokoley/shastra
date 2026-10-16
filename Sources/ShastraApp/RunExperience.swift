@@ -17,9 +17,27 @@ struct ConversationRunStatus: View {
         case .failed: "Failed"
         }
     }
+    private var phase: MicroStatusMark.Phase {
+        switch conversation.state {
+        case .idle: .idle
+        case .connecting, .running: .running
+        case .waitingForApproval: .attention
+        case .completed: .done
+        case .interrupted: .stopped
+        case .failed: .failed
+        }
+    }
     var body: some View {
         HStack(spacing: 10) {
-            StatusPill(title: label, symbol: active ? "circle.dotted" : "circle", color: conversation.state == .failed ? Surface.warning : Surface.accent)
+            HStack(spacing: 5) {
+                MicroStatusMark(phase: phase, size: 12)
+                Text(label)
+            }.font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(conversation.state == .failed ? Surface.warning : Surface.accent)
+                .padding(.horizontal, 8).padding(.vertical, 5).background(Surface.accent.opacity(0.10), in: Capsule())
+            if conversation.state == .running, let start = conversation.entries.last(where: { $0.kind == .user })?.createdAt {
+                MicroActivityClock(startedAt: start)
+            }
             Text("\(conversation.provider.title) · \(conversation.selectedModel ?? "Default model") · Runs while Shastra is open")
                 .font(.system(size: 10)).foregroundStyle(Surface.muted).lineLimit(1)
             Spacer()

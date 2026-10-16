@@ -654,28 +654,7 @@ private struct ConversationPane: View {
 
 private struct ToolActivityGroup: View {
     let entries: [Entry]
-    var body: some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(entries) { entry in
-                    Text(entry.text)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(Surface.muted)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if entry.id != entries.last?.id { Surface.stroke.frame(height: 1) }
-                }
-            }.padding(.top, 12)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "terminal")
-                Text(entries.count == 1 ? "Tool activity" : "\(entries.count) tool actions")
-            }
-            .font(.system(size: 12))
-            .foregroundStyle(Surface.muted)
-        }
-        .padding(.vertical, 3)
-    }
+    var body: some View { MicroToolTrace(entries: entries) }
 }
 
 private struct MessageRow: View {

@@ -8,6 +8,8 @@ The current implementation roadmap is [Desktop continuity and coordination](BUIL
 
 ## Available now
 
+- **Native micro-interactions**: spring selection controls, multitasking switches and checkboxes, animated task status, compact tool traces, composer focus feedback, folder reveals, and copy confirmation. See the [interaction guide](Docs/MicroInteractions.md) for React Bits references and accessibility behavior.
+
 See the [collaboration workflow guide](Docs/CollaborationWorkflow.md) for project context, annotations, forks, multitasking, and change review.
 
 - **Project context**: saved instructions, reference file paths, and decisions shared across a repository's chats and worktrees. Each new request receives the latest revision; concurrent edits cannot silently overwrite one another.
