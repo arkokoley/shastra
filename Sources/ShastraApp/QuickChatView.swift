@@ -120,7 +120,7 @@ struct QuickChatView: View {
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Surface.text)
                 Text(detail).font(.system(size: 13)).foregroundStyle(Surface.muted).lineLimit(2)
             }.frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading).padding(16)
-                .glassSurface(radius: Design.cardRadius, interactive: true, tint: Surface.raised.opacity(0.3))
+                .glassSurface(radius: Design.cardRadius, interactive: true, tint: Surface.glassTint.opacity(0.25))
         }.buttonStyle(MicroPressStyle()).help("Add a starting prompt; edit it before sending")
     }
 

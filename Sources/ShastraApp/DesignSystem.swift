@@ -17,10 +17,11 @@ enum Surface {
             NSColor(white: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light, alpha: 1)
         })
     }
-    static let canvas = color(0xF7F8F6, 0x1B1D21)
+    static let canvas = color(0xF1F6F1, 0x1B231E)
     static let sidebar = color(0xEDF0EC, 0x15171B)
     static let dock = color(0xE5EBE5, 0x26282A)
-    static let raised = color(0xFFFFFF, 0x25282E)
+    static let raised = color(0xF8FCF8, 0x253029)
+    static let glassTint = color(0xC9E2D0, 0x3E654D)
     static let selected = color(0xDDEBE1, 0x263D31)
     static let stroke = color(0xC5CEC6, 0x45494D)
     static let muted = color(0x4C584F, 0xBBC6BD)
@@ -125,7 +126,7 @@ private struct SidebarMaterial: NSViewRepresentable {
         let view = NSVisualEffectView()
         view.material = .sidebar
         view.blendingMode = .behindWindow
-        view.state = .followsWindowActiveState
+        view.state = .active
         return view
     }
     func updateNSView(_ view: NSVisualEffectView, context: Context) {}
@@ -138,7 +139,7 @@ private struct GlassSidebar: ViewModifier {
         if reduceTransparency || contrast == .increased {
             content.background(Surface.sidebar)
         } else {
-            content.background(Surface.sidebar.opacity(0.32))
+            content.background(Surface.glassTint.opacity(0.10))
                 .background(SidebarMaterial())
         }
     }
@@ -154,7 +155,7 @@ private struct GlassControls: ViewModifier {
 
 extension View {
     func glassSurface(radius: CGFloat = Design.controlRadius, interactive: Bool = false,
-                      tint: Color? = nil, opaque: Color = Surface.raised) -> some View {
+                      tint: Color? = Surface.glassTint.opacity(0.22), opaque: Color = Surface.raised) -> some View {
         modifier(GlassSurface(radius: radius, interactive: interactive, tint: tint, opaque: opaque))
     }
     func materialPanel(radius: CGFloat = 0, color: Color = Surface.raised) -> some View {
@@ -175,7 +176,7 @@ struct AppButtonStyle: PrimitiveButtonStyle {
 
     @ViewBuilder func makeBody(configuration: Configuration) -> some View {
         if kind == .primary {
-            button(configuration).buttonStyle(SolidActionStyle())
+            button(configuration).buttonStyle(TintedActionStyle())
         } else if #available(macOS 26.0, *), !reduceTransparency, contrast != .increased {
             button(configuration).buttonStyle(.glass)
         } else {
@@ -187,26 +188,27 @@ struct AppButtonStyle: PrimitiveButtonStyle {
             configuration.label
                 .frame(minWidth: 24, minHeight: compact ? 24 : 28)
                 .contentShape(Rectangle())
-                .foregroundStyle(kind == .primary ? (enabled ? Surface.onAccent : Surface.muted) : Surface.text)
+                .foregroundStyle(kind == .primary ? (enabled ? Surface.accent : Surface.muted) : Surface.text)
         }
             .font(.system(size: 13, weight: .medium))
             .controlSize(compact ? .small : .regular)
             .buttonBorderShape(.capsule)
-            .tint(kind == .primary ? Surface.accent : .clear)
+            .tint(Surface.glassTint.opacity(0.22))
             .microLift()
     }
 }
 
-/// A stable filled action surface: native prominent styles can lose their tint
-/// in a borderless window, leaving custom foregrounds on a white background.
-private struct SolidActionStyle: ButtonStyle {
+/// Green-tinted glass uses dark ink rather than white labels on a solid fill.
+private struct TintedActionStyle: ButtonStyle {
     @Environment(\.isEnabled) private var enabled
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(enabled ? Surface.onAccent : Surface.muted)
+            .foregroundStyle(enabled ? Surface.accent : Surface.muted)
             .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(enabled ? Surface.accent : Surface.hover, in: RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).stroke(enabled ? Surface.accent : Surface.stroke))
+            .glassSurface(radius: 9, interactive: enabled,
+                          tint: Surface.glassTint.opacity(enabled ? 0.55 : 0.18), opaque: Surface.selected)
+            .overlay(RoundedRectangle(cornerRadius: 9)
+                .stroke(enabled ? Surface.accent.opacity(0.35) : Surface.stroke, lineWidth: 1))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }

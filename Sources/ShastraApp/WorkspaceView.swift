@@ -36,7 +36,8 @@ private struct WindowChrome: NSViewRepresentable {
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
             window.styleMask.insert(.fullSizeContentView)
-            window.backgroundColor = .windowBackgroundColor
+            window.isOpaque = false
+            window.backgroundColor = .clear
             window.isMovableByWindowBackground = true
         }
     }
@@ -100,11 +101,10 @@ struct WorkspaceView: View {
                         .onAppear { tools.setRoot(conversation.workingDirectory) }
                         .onChange(of: conversation.workingDirectory) { _, path in tools.setRoot(path) }
                 }
-            }
+            }.background(Surface.canvas)
         }
         .safeAreaInset(edge: .bottom, spacing: 0) { UsageStatusBar(board: model.agentBoard) }
         .ignoresSafeArea(.container, edges: .top)
-        .background(Surface.canvas)
         .background(WindowChrome())
         .tint(Surface.accent)
         .preferredColorScheme(chrome.appearance)
