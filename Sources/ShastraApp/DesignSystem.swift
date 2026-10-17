@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Neutral reading surfaces and a restrained graphite control palette.
+/// Glass surfaces, strong ink, and one forest-green action accent.
 /// Native controls retain keyboard navigation and system focus treatment.
 enum Surface {
     static func color(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -17,18 +17,18 @@ enum Surface {
             NSColor(white: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light, alpha: 1)
         })
     }
-    static let canvas = color(0xF2F2F0, 0x232426)
-    static let sidebar = color(0xECECEA, 0x1F2022)
-    static let dock = color(0xE8E9E7, 0x26282A)
-    static let raised = color(0xFAFAF8, 0x2A2C2F)
-    static let selected = color(0xE2E3E2, 0x34373A)
-    static let stroke = color(0xD6D7D5, 0x45494D)
-    static let muted = color(0x62676C, 0xADB1B5)
-    static let text = color(0x2F3235, 0xE3E5E7)
-    static let accent = color(0x545D66, 0xAEB8C2)
-    static let onAccent = color(0xFAFAF8, 0x23272B)
-    static let hover = color(0xE8E9E7, 0x303336)
-    static let code = color(0xEFEFEE, 0x202224)
+    static let canvas = color(0xF7F8F6, 0x1B1D21)
+    static let sidebar = color(0xEDF0EC, 0x15171B)
+    static let dock = color(0xE5EBE5, 0x26282A)
+    static let raised = color(0xFFFFFF, 0x25282E)
+    static let selected = color(0xDDEBE1, 0x263D31)
+    static let stroke = color(0xC5CEC6, 0x45494D)
+    static let muted = color(0x4C584F, 0xBBC6BD)
+    static let text = color(0x1A251E, 0xF1F4F8)
+    static let accent = color(0x24583D, 0x98CEAA)
+    static let onAccent = color(0xFFFFFF, 0x142A1D)
+    static let hover = color(0xE5EBE5, 0x2D3830)
+    static let code = color(0xEFF2EE, 0x202224)
     static let warning = color(0x876A37, 0xC1A878)
     static let success = color(0x417057, 0x8AAF91)
     static let danger = color(0xAC5A5F, 0xD89599)
@@ -50,7 +50,7 @@ enum Design {
     static let controlRadius: CGFloat = 8
     static let cardRadius: CGFloat = 14
     static let composerRadius: CGFloat = 20
-    static let readingWidth: CGFloat = 740
+    static let readingWidth: CGFloat = 680
 }
 
 struct ShastraMark: View {
@@ -114,7 +114,7 @@ private struct MaterialPanel: ViewModifier {
         if reduceTransparency || contrast == .increased {
             content.background(color, in: RoundedRectangle(cornerRadius: radius))
         } else {
-            content.background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: radius))
+            content.background(color.opacity(0.78), in: RoundedRectangle(cornerRadius: radius))
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius))
         }
     }
@@ -124,7 +124,7 @@ private struct SidebarMaterial: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = .sidebar
-        view.blendingMode = .withinWindow
+        view.blendingMode = .behindWindow
         view.state = .followsWindowActiveState
         return view
     }
@@ -138,7 +138,7 @@ private struct GlassSidebar: ViewModifier {
         if reduceTransparency || contrast == .increased {
             content.background(Surface.sidebar)
         } else {
-            content.background(Surface.sidebar.opacity(0.85))
+            content.background(Surface.sidebar.opacity(0.32))
                 .background(SidebarMaterial())
         }
     }
@@ -169,19 +169,15 @@ struct AppButtonStyle: PrimitiveButtonStyle {
     enum Kind { case primary, secondary, quiet }
     var kind: Kind = .secondary
     var compact = false
-    @Environment(\.controlActiveState) private var activeState
+    @Environment(\.isEnabled) private var enabled
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
     @ViewBuilder func makeBody(configuration: Configuration) -> some View {
-        if #available(macOS 26.0, *), !reduceTransparency, contrast != .increased {
-            if kind == .primary {
-                button(configuration).buttonStyle(.glassProminent)
-            } else {
-                button(configuration).buttonStyle(.glass)
-            }
-        } else if kind == .primary {
-            button(configuration).buttonStyle(.borderedProminent)
+        if kind == .primary {
+            button(configuration).buttonStyle(SolidActionStyle())
+        } else if #available(macOS 26.0, *), !reduceTransparency, contrast != .increased {
+            button(configuration).buttonStyle(.glass)
         } else {
             button(configuration).buttonStyle(.bordered)
         }
@@ -191,13 +187,38 @@ struct AppButtonStyle: PrimitiveButtonStyle {
             configuration.label
                 .frame(minWidth: 24, minHeight: compact ? 24 : 28)
                 .contentShape(Rectangle())
-                .foregroundStyle(kind == .primary && activeState == .key ? Surface.onAccent : Surface.text)
+                .foregroundStyle(kind == .primary ? (enabled ? Surface.onAccent : Surface.muted) : Surface.text)
         }
-            .font(.system(size: 12, weight: .medium))
+            .font(.system(size: 13, weight: .medium))
             .controlSize(compact ? .small : .regular)
             .buttonBorderShape(.capsule)
-            .tint(Surface.accent)
+            .tint(kind == .primary ? Surface.accent : .clear)
             .microLift()
+    }
+}
+
+/// A stable filled action surface: native prominent styles can lose their tint
+/// in a borderless window, leaving custom foregrounds on a white background.
+private struct SolidActionStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(enabled ? Surface.onAccent : Surface.muted)
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(enabled ? Surface.accent : Surface.hover, in: RoundedRectangle(cornerRadius: 9))
+            .overlay(RoundedRectangle(cornerRadius: 9).stroke(enabled ? Surface.accent : Surface.stroke))
+            .opacity(configuration.isPressed ? 0.85 : 1)
+    }
+}
+
+extension View {
+    func composerPlaceholder(_ text: String, visible: Bool) -> some View {
+        overlay(alignment: .topLeading) {
+            if visible {
+                Text(text).font(.system(size: 16)).foregroundStyle(Surface.muted)
+                    .allowsHitTesting(false).accessibilityHidden(true)
+            }
+        }
     }
 }
 
@@ -228,7 +249,7 @@ private struct ComposerSurface: ViewModifier {
     func body(content: Content) -> some View {
         content.materialPanel(radius: Design.composerRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.composerRadius)
-                .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1)
+                .stroke(focused ? Surface.accent : Surface.stroke, lineWidth: focused ? 1.5 : 1)
                 .allowsHitTesting(false))
             .shadow(color: Color.black.opacity(0.035), radius: 10, x: 0, y: 3)
             .animation(reduceMotion ? nil : MicroMotion.settle, value: focused)

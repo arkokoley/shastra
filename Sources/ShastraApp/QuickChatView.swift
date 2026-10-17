@@ -31,8 +31,9 @@ struct QuickChatView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     ComposerContextBar(key: "new", workspace: app.workingDirectory, draft: $app.newChatMessage)
                     VStack(alignment: .leading, spacing: 18) {
-                        TextField("Describe what you have in mind…", text: $app.newChatMessage, axis: .vertical)
-                            .textFieldStyle(.plain).font(.system(size: 15)).lineLimit(3...8)
+                        TextField("", text: $app.newChatMessage, axis: .vertical)
+                            .textFieldStyle(.plain).font(.system(size: 16)).foregroundStyle(Surface.text).lineLimit(3...8)
+                            .composerPlaceholder("Describe what you have in mind…", visible: app.newChatMessage.isEmpty)
                             .focused($messageFocused).accessibilityLabel("New chat message")
                     .modifier(ComposerImagePaste(key: "new"))
                             .onSubmit { if canSend { app.sendNewChat() } }
@@ -67,7 +68,7 @@ struct QuickChatView: View {
                                 HStack(spacing: 8) { Text("Start chat"); Image(systemName: "arrow.up") }
                             }.buttonStyle(AppButtonStyle(kind: .primary)).disabled(!canSend)
                                 .help("Send · Return").accessibilityLabel("Start chat")
-                        }.menuStyle(.borderlessButton).font(.system(size: 12)).foregroundStyle(Surface.muted)
+                        }.menuStyle(.borderlessButton).font(.system(size: 13)).foregroundStyle(Surface.text)
                     }.padding(20).composerSurface(focused: messageFocused)
                     HStack(spacing: 16) {
                         ModelPicker(provider: app.selectedProvider, model: $app.newModel, accountID: app.newAccountID, workspace: app.workingDirectory)
@@ -87,7 +88,7 @@ struct QuickChatView: View {
                 }
                 if app.newChatMessage.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("A PLACE TO START").font(.system(size: 10, weight: .semibold)).tracking(1.2).foregroundStyle(Surface.muted)
+                        Text("Start with an idea").font(.system(size: 12, weight: .semibold)).foregroundStyle(Surface.muted)
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 220), spacing: 12, alignment: .top)], spacing: 12) {
                             starter("Build a feature", detail: "Turn an idea into working code", symbol: "square.stack.3d.up",
                                     prompt: "Help me build a feature in this project. Start by understanding the code, then help me define and implement the change: ")
@@ -117,9 +118,9 @@ struct QuickChatView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: symbol).font(.system(size: 18, weight: .medium)).foregroundStyle(Surface.accent)
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Surface.text)
-                Text(detail).font(.system(size: 11)).foregroundStyle(Surface.muted).lineLimit(2)
+                Text(detail).font(.system(size: 13)).foregroundStyle(Surface.muted).lineLimit(2)
             }.frame(maxWidth: .infinity, minHeight: 92, alignment: .topLeading).padding(16)
-                .glassSurface(radius: Design.cardRadius, interactive: true)
+                .glassSurface(radius: Design.cardRadius, interactive: true, tint: Surface.raised.opacity(0.3))
         }.buttonStyle(MicroPressStyle()).help("Add a starting prompt; edit it before sending")
     }
 

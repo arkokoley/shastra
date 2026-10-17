@@ -392,12 +392,12 @@ private struct ConversationSidebarRow: View {
     var body: some View {
         HStack(spacing: 9) {
             Text(conversation.title.replacingOccurrences(of: "\n", with: " "))
-                .font(.system(size: 13, weight: .regular))
-                .foregroundStyle(Surface.text.opacity(selected ? 1 : 0.8))
+                .font(.system(size: 14, weight: selected ? .medium : .regular))
+                .foregroundStyle(Surface.text)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Text(Design.age(conversation.updatedAt))
-                .font(.system(size: 9)).foregroundStyle(Surface.muted).lineLimit(1).frame(maxWidth: 46)
+            Text(Design.age(conversation.updatedAt)).monospacedDigit()
+                .font(.system(size: 11)).foregroundStyle(Surface.muted).lineLimit(1).frame(maxWidth: 46)
             if conversation.state == .running || conversation.state == .waitingForApproval {
                 Circle().fill(conversation.state == .waitingForApproval ? Surface.warning : Surface.accent)
                     .frame(width: 5, height: 5)
@@ -559,10 +559,11 @@ private struct ConversationPane: View {
             }
 
             VStack(alignment: .leading, spacing: 20) {
-                TextField("Plan, build, or ask anything", text: $model.draft, axis: .vertical)
+                TextField("", text: $model.draft, axis: .vertical)
                     .lineLimit(2...8)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 14))
+                    .font(.system(size: 16)).foregroundStyle(Surface.text)
+                    .composerPlaceholder("Plan, build, or ask anything", visible: model.draft.isEmpty)
                     .padding(.top, 2)
                     .onSubmit { if canSend { model.send() } }
                     .accessibilityLabel("Message \(conversation.provider.title)")
@@ -601,7 +602,7 @@ private struct ConversationPane: View {
                                 .frame(width: 22, height: 22)
                         }.buttonStyle(AppButtonStyle(kind: .primary, compact: true)).disabled(!canSend).help("Send message")
                     }
-                }.foregroundStyle(Surface.muted)
+                }.foregroundStyle(Surface.text)
             }
             .padding(14)
             .composerSurface(focused: composerFocused)
@@ -648,7 +649,7 @@ private struct MessageRow: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(entry.text)
                         .textSelection(.enabled)
-                        .font(.system(size: 13)).lineSpacing(4)
+                        .font(.system(size: 15)).lineSpacing(5)
                         .foregroundStyle(Surface.text)
                         .lineLimit(isLongMessage && !interaction.expanded ? 8 : nil)
                     CopyTextButton(text: entry.text)

@@ -75,7 +75,7 @@ struct UsageStatusBar: View {
                     } else {
                         ForEach(Array(windows.enumerated()), id: \.offset) { _, window in
                             HStack(spacing: 5) {
-                                Text("\(window.label) · \(window.remainingPercent)% left")
+                                Text("\(window.label) · \(window.remainingPercent)% left").monospacedDigit()
                                 ProgressView(value: Double(window.remainingPercent), total: 100)
                                     .progressViewStyle(.linear).frame(width: 44)
                                     .tint(window.remainingPercent <= 10 ? Surface.warning : Surface.accent)
@@ -114,7 +114,7 @@ struct UsageStatusBar: View {
                     if limits.buckets.count > 1 { Text(bucket.limitName ?? bucket.limitId ?? "Usage").font(.subheadline.bold()) }
                     ForEach(Array(bucket.windows.enumerated()), id: \.offset) { _, window in
                         VStack(alignment: .leading, spacing: 5) {
-                            HStack { Text(window.label); Spacer(); Text("\(window.remainingPercent)% remaining") }
+                            HStack { Text(window.label); Spacer(); Text("\(window.remainingPercent)% remaining").monospacedDigit() }
                             ProgressView(value: Double(window.remainingPercent), total: 100)
                             if let reset = window.resetsAt {
                                 Text("Resets \(Date(timeIntervalSince1970: reset).formatted(date: .abbreviated, time: .shortened))")

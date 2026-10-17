@@ -114,7 +114,7 @@ struct MarkdownMessage: View {
                                 GridRow {
                                     ForEach(rows[row].indices, id: \.self) { column in
                                         inline(rows[row][column])
-                                            .font(.system(size: 13, weight: row == 0 ? .semibold : .regular))
+                                            .font(.system(size: 14, weight: row == 0 ? .semibold : .regular))
                                             .frame(minWidth: 90, maxWidth: 260, alignment: .leading)
                                             .textSelection(.enabled)
                                     }
@@ -126,7 +126,7 @@ struct MarkdownMessage: View {
                 }
             }
         }
-        .font(.system(size: 13))
+        .font(.system(size: 15))
         .foregroundStyle(Surface.text)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
