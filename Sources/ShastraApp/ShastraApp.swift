@@ -113,7 +113,7 @@ import ShastraCore
     @Published var catalogStatus = ""
     @Published var notice: String?
 
-    let availability = ExecutableLocator.discover()
+    @Published var availability = ExecutableLocator.discover()
     private let store = ConversationStore()
     private var sessions: [UUID: AgentSession] = [:]
     private var sessionTokens: [UUID: UUID] = [:]
@@ -165,17 +165,16 @@ import ShastraCore
         refreshCatalog()
     }
 
-    func beginNewChat(in workspace: String? = nil, background: Bool? = nil) {
+    func beginNewChat(in workspace: String? = nil, background: Bool? = nil, isolated: Bool = false) {
         newChatIsolated = false
         newModel = ""
         newChatUsesService = background ?? true
-        let remembered = workspace.flatMap { workspaceIdentities[$0]?.projectID }.flatMap { experience.projectWorkspaces[$0] }
-        let candidates = workspace.map { [remembered, $0].compactMap { $0 } } ?? [
+        let candidates = workspace.map { [$0] } ?? [
             UserDefaults.standard.string(forKey: "lastChatWorkspace"),
             showAgents ? agentBoard.selected?.workspace : selected?.workingDirectory,
             workingDirectory
         ].compactMap { $0 } + recentWorkspacePaths
-        prepareNewChatWorkspace(candidates, reportInvalid: workspace != nil, background: background)
+        prepareNewChatWorkspace(candidates, reportInvalid: workspace != nil, background: background, isolated: isolated ? true : nil)
         selectedProvider = (showAgents ? agentBoard.selected?.provider : selected?.provider) ?? selectedProvider
         newAccountID = preferredAccount(for: selectedProvider)
         profileDirectory = ""
@@ -186,7 +185,7 @@ import ShastraCore
         prepareNewChatWorkspace([path], reportInvalid: true)
     }
 
-    private func prepareNewChatWorkspace(_ paths: [String], reportInvalid: Bool, background: Bool? = nil) {
+    private func prepareNewChatWorkspace(_ paths: [String], reportInvalid: Bool, background: Bool? = nil, isolated: Bool? = nil) {
         workspaceSelectionTask?.cancel()
         resolvingNewChatWorkspace = true
         workspaceSelectionTask = Task {
@@ -199,6 +198,7 @@ import ShastraCore
                 workingDirectory = location.workspacePath
                 restoreProjectDefaults(location)
                 if let background { newChatUsesService = background }
+                if let isolated { newChatIsolated = isolated; if isolated { newChatUsesService = true } }
                 workspaceIdentities[workingDirectory] = location
                 UserDefaults.standard.set(workingDirectory, forKey: "lastChatWorkspace")
             } else {
@@ -294,7 +294,9 @@ import ShastraCore
         }
         UserDefaults.standard.set(workingDirectory, forKey: "lastChatWorkspace")
         rememberProjectDefaults()
-        let messageWithFiles = ComposerContext.prompt(message, files: experience.attachments["new"] ?? [])
+        let selectedFiles = experience.attachments["new"] ?? []
+        let selectedReferences = contextReferences("new")
+        let messageWithFiles = composedPrompt(message, key: "new")
         if newChatUsesService || newChatIsolated {
             var params = ["objective": messageWithFiles, "title": String(message.prefix(60)), "provider": selectedProvider.rawValue,
                           "workspace": workingDirectory, "isolate": String(newChatIsolated)]
@@ -304,7 +306,8 @@ import ShastraCore
             agentBoard.perform("agents.spawn", params: params, selectResult: true) { [weak self] in
                 guard let self else { return }
                 if newChatMessage.trimmingCharacters(in: .whitespacesAndNewlines) == message { newChatMessage = "" }
-                experience.attachments["new"] = []
+                experience.attachments["new"]?.removeAll { selectedFiles.contains($0) }
+                clearContextReferences(selectedReferences, key: "new")
                 showNewConversation = false
                 showAgents = true
             }
@@ -312,8 +315,13 @@ import ShastraCore
             createConversation()
             guard !showNewConversation else { return }
             showAgents = false
-            draft = messageWithFiles
-            experience.attachments["new"] = []
+            draft = message
+            if let id = selectedID {
+                experience.attachments[id.uuidString] = selectedFiles
+                for reference in selectedReferences { addContextReference(reference, key: id.uuidString) }
+            }
+            experience.attachments["new"]?.removeAll { selectedFiles.contains($0) }
+            clearContextReferences(selectedReferences, key: "new")
             newChatMessage = ""
             send()
         }
@@ -577,7 +585,8 @@ import ShastraCore
         catch { notice = error.localizedDescription; return }
         let originalDraft = draft
         let originalFiles = experience.attachments[id.uuidString] ?? []
-        let text = ComposerContext.prompt(draft.trimmingCharacters(in: .whitespacesAndNewlines), files: originalFiles)
+        let originalReferences = contextReferences(id.uuidString)
+        let text = ComposerContext.prompt(draft.trimmingCharacters(in: .whitespacesAndNewlines), files: originalFiles, references: originalReferences)
         guard !text.isEmpty, !hasUnresolvedDelivery(conversations[index]), conversations[index].historyLoaded != false,
               ![.running, .connecting, .waitingForApproval].contains(conversations[index].state) else { return }
         if conversations[index].sourceIdentity != nil, conversations[index].sourceEndpoint?.workingDirectory == nil,
@@ -595,6 +604,7 @@ import ShastraCore
             conversations[index].title = String(text.prefix(60))
         }
         experience.attachments[id.uuidString] = []
+        clearContextReferences(originalReferences, key: id.uuidString)
         conversations[index].state = .connecting
         let conversation = conversations[index]
         let token = sessionTokens[id] ?? UUID()
@@ -667,6 +677,7 @@ import ShastraCore
                     sessions.removeValue(forKey: id)?.stop()
                     if (drafts[id] ?? "").isEmpty { drafts[id] = originalDraft; if selectedID == id { draft = originalDraft } }
                     if (experience.attachments[id.uuidString] ?? []).isEmpty { experience.attachments[id.uuidString] = originalFiles }
+                    for reference in originalReferences where !contextReferences(id.uuidString).contains(where: { $0.id == reference.id }) { addContextReference(reference, key: id.uuidString) }
                 }
                 handle(.error(error.localizedDescription), for: id)
             }

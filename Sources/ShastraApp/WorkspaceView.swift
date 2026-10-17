@@ -560,16 +560,13 @@ private struct ConversationPane: View {
                     HStack {
                         Button("Open Cursor") { model.openCursorForContinuation() }.buttonStyle(AppButtonStyle())
                         Button("Copy follow-up") {
-                            let text = ComposerContext.prompt(model.draft, files: model.experience.attachments[conversation.id.uuidString] ?? [])
+                            let text = model.composedPrompt(model.draft, key: conversation.id.uuidString)
                             NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string)
                         }.buttonStyle(AppButtonStyle(kind: .quiet)).disabled(model.draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 }.padding(12).background(Surface.selected.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
             }
 
-            if model.workspaceIdentities[conversation.workingDirectory]?.branch != nil {
-                ComposerActions(draft: $model.draft)
-            }
             VStack(alignment: .leading, spacing: 20) {
                 TextField("Plan, build, or ask anything", text: $model.draft, axis: .vertical)
                     .lineLimit(2...8)
@@ -581,15 +578,7 @@ private struct ConversationPane: View {
                     .modifier(ComposerImagePaste(key: conversation.id.uuidString))
                     .focused($composerFocused)
                 HStack(spacing: 8) {
-                    Menu {
-                        Button("Add file reference…") { addFileReference() }
-                        Button("Add workspace path") { model.draft += "\nWorkspace: \(conversation.workingDirectory)" }
-                    } label: {
-                        Image(systemName: "plus").font(.system(size: 16, weight: .light))
-                            .frame(width: 28, height: 28)
-                            .glassSurface(radius: 14, interactive: true)
-                    }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-                        .help("Add context")
+                    ComposerAddButton(key: conversation.id.uuidString, workspace: conversation.workingDirectory, draft: $model.draft)
                     Menu {
                         Text("Keep this provider to resume the same thread")
                         Divider()
@@ -646,16 +635,7 @@ private struct ConversationPane: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func addFileReference() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = true
-        panel.directoryURL = URL(fileURLWithPath: conversation.workingDirectory)
-        if panel.runModal() == .OK {
-            for url in panel.urls { model.draft += "\nFile reference: \(url.path)" }
-        }
-    }
+
 }
 
 private struct ToolActivityGroup: View {

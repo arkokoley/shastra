@@ -23,6 +23,7 @@ public struct ExperiencePreferences: Codable, Sendable {
     public var projects: [String: ProjectDefaults] = [:]
     public var modelFavorites: [String: [String]]?
     public var models: [String: [String]] = [:]
+    public var contextReferences: [String: [ComposerReference]]?
     public var attachments: [String: [String]] = [:]
     public var notifications = false
     public init() {}

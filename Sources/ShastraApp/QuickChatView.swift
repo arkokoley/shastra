@@ -37,10 +37,7 @@ struct QuickChatView: View {
                     .modifier(ComposerImagePaste(key: "new"))
                             .onSubmit { if canSend { app.sendNewChat() } }
                         HStack(spacing: 12) {
-                            Menu {
-                                Button("Add file reference…") { addFile() }
-                            } label: { Image(systemName: "plus").font(.system(size: 16)).frame(width: 28, height: 28) }
-                                .menuIndicator(.hidden).fixedSize().help("Add a file to the conversation")
+                            ComposerAddButton(key: "new", workspace: app.workingDirectory, draft: $app.newChatMessage)
                             Menu {
                                 ForEach(app.availability.filter(\.isReady)) { available in
                                     Button(available.provider.title) {
@@ -79,7 +76,6 @@ struct QuickChatView: View {
                             AgentAccessMenu(mode: app.defaultAccessMode) { app.setAccessMode($0) }
                         }
                         Spacer(minLength: 8)
-                        Toggle("Keep working when the window closes", isOn: $app.newChatUsesService).toggleStyle(MicroCheckStyle()).font(.caption)
                     }
                     ComposerWorkspaceBar(path: app.workingDirectory, isNew: true, background: app.newChatUsesService)
                     HStack {
@@ -101,8 +97,6 @@ struct QuickChatView: View {
                                     prompt: "Explore this project and explain its architecture, main entry points, and how to run it. Do not change files.")
                         }
                     }.padding(.top, 6)
-                } else if app.workspaceIdentities[app.workingDirectory]?.isGit == true {
-                    ComposerActions(draft: $app.newChatMessage)
                 }
                 if let error = board.error, app.newChatUsesService || app.newChatIsolated {
                     Label(error, systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(Surface.warning)
@@ -128,15 +122,6 @@ struct QuickChatView: View {
                 .glassSurface(radius: Design.cardRadius, interactive: true)
         }.buttonStyle(MicroPressStyle()).help("Add a starting prompt; edit it before sending")
     }
-    private func addFile() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = true
-        panel.directoryURL = URL(fileURLWithPath: app.workingDirectory)
-        if panel.runModal() == .OK {
-            app.addContextFiles(panel.urls, key: "new")
-        }
-    }
+
 
 }

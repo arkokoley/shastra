@@ -68,9 +68,9 @@ import ShastraCore
             busy = false
         }
     }
-    func send(_ task: AgentTask, files: [String] = [], mode: FollowupMode = .queue, completed: (() -> Void)? = nil) {
+    func send(_ task: AgentTask, files: [String] = [], references: [ComposerReference] = [], mode: FollowupMode = .queue, completed: (() -> Void)? = nil) {
         let draft = drafts[task.id.uuidString] ?? ""
-        let text = ComposerContext.prompt(draft, files: files)
+        let text = ComposerContext.prompt(draft, files: files, references: references)
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         let method = mode == .parallel ? "agents.parallel" : mode == .steer ? "agents.steer" : "agents.send"
         let params = mode == .parallel ? ["sourceID": task.id.uuidString, "objective": text] : ["taskID": task.id.uuidString, "message": text, "forceQueue": "true"]

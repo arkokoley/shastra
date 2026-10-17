@@ -67,6 +67,16 @@ From **Agents workspace**, **New agent** (⌘⇧N) and **New chat** use this sam
 
 The bottom status bar follows the selected chat's provider/account. Codex displays real remaining usage windows; click it for reset dates, additional buckets, and manual refresh. Limits refresh every minute through the read-only app-server API without starting a model turn. Unsupported providers and accounts without reported windows show **Limits unavailable**. Failed refreshes retain the last successful reading with a warning and timestamp.
 
+## Context, environments, and integration readiness
+
+**Add** (or type `@` at the end of a draft) opens one searchable picker with Files, Projects, Chats, and Skills. Files remain local references. Project notes and available chat history become complete, private snapshots; they are not truncated to a recent-message summary. Skill selections reference the explicit `SKILL.md` file. Every selection appears above the composer as a removable chip; click it to inspect the exact file before sending. Selections persist with drafts. Nothing runs when you select context.
+
+The **Execution environment** control replaces the separate workspace and This Mac menus. It shows the selected folder and branch. New chats choose **This folder**, **Background**, or **Isolated worktree**. Search known folders, enter an absolute path, or browse another Git repository. A new worktree is allocated on first send. Existing chats keep their execution folder; choosing another environment starts a new chat. Workspace pins remain available in the picker.
+
+**Skills & tools → Connections** groups responding Shastra services, installed runtimes, and unavailable adapters. The library separately shows settings configured in the destination, items available to copy, and unavailable items. Configured settings are not labelled as authenticated live connections. Copy preview, backups, credential opt-in, and undo remain available. Saved accounts may use separate settings from the user-level library.
+
+The composer keeps Add, provider/account, and send controls in view. File browsing, image paste, commit/push, PR creation, and CI-debugging actions live under Add; action shortcuts prepare an editable draft before sending.
+
 ## Saved Codex permissions
 
 Choose **Codex permissions** beneath an existing chat composer or beside the model picker in a new chat:

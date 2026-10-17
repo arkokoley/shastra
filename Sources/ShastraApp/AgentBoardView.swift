@@ -236,9 +236,6 @@ private struct AgentTaskDetail: View {
             }
             VStack(alignment: .leading, spacing: 10) {
             ComposerContextBar(key: task.id.uuidString, workspace: task.workspace, draft: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }))
-            if app.workspaceIdentities[task.workspace]?.branch != nil {
-                ComposerActions(draft: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }))
-            }
             VStack(alignment: .leading, spacing: 8) {
                 MicroSegment(label: "Send as", selection: $followupMode, options: [
                     .init(value: .queue, title: "Queue"), .init(value: .parallel, title: "Run alongside"), .init(value: .steer, title: "Steer")
@@ -252,9 +249,10 @@ private struct AgentTaskDetail: View {
                     .focused($composerFocused)
                 if let reason = sendBlockedReason { Text(reason).font(.caption).foregroundStyle(Surface.muted).fixedSize(horizontal: false, vertical: true) }
                 HStack {
+                    ComposerAddButton(key: task.id.uuidString, workspace: task.workspace, draft: Binding(get: { board.drafts[task.id.uuidString] ?? "" }, set: { board.drafts[task.id.uuidString] = $0 }))
                     Text("\(task.provider.title) · \(task.model ?? "Default model") · \(task.column.rawValue)").font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button(followupMode == .parallel ? "Run alongside" : followupMode == .steer ? "Redirect" : task.status.isActive ? "Queue" : "Send") { board.send(task, files: app.experience.attachments[task.id.uuidString] ?? [], mode: followupMode) { app.experience.attachments[task.id.uuidString] = [] } }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
+                    Button(followupMode == .parallel ? "Run alongside" : followupMode == .steer ? "Redirect" : task.status.isActive ? "Queue" : "Send") { sendMessage() }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
                         .disabled(sendBlockedReason != nil || (board.drafts[task.id.uuidString] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         .help(sendBlockedReason ?? "Send · Command-Return")
                 }
@@ -292,6 +290,15 @@ private struct AgentTaskDetail: View {
                 .onAppear { workspaceTools.setRoot(task.workspace) }
                 .onChange(of: task.workspace) { _, path in workspaceTools.setRoot(path) }
         }
+        }
+    }
+    private func sendMessage() {
+        let key = task.id.uuidString
+        let references = app.contextReferences(key)
+        let files = app.experience.attachments[key] ?? []
+        board.send(task, files: files, references: references, mode: followupMode) {
+            app.experience.attachments[key]?.removeAll { files.contains($0) }
+            app.clearContextReferences(references, key: key)
         }
     }
     private func action(_ method: String, _ params: [String: String] = [:]) { board.perform(method, params: params.merging(["taskID": task.id.uuidString]) { _, value in value }) }

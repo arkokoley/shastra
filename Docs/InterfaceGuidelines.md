@@ -24,11 +24,13 @@ These are native equivalents, not CSS copied into the app. Web font formats, bro
 
 Inspected the installed Reason app on 2026-10-16, including its new-session composer, context menu, environment menu, and Connectors page. No messages were sent and no connectors or environments were changed. These are observed interface patterns, not verified claims about execution behavior.
 
-Recommended follow-ups, in order:
+Implemented in Shastra 0.6.4, in order:
 
-1. **Unified context picker.** Reason groups files, repositories, sessions, skills, people, and devices in its mention menu. Shastra can bring its existing file references, project context, chat forks, and runtime skills into one searchable picker. Show exactly what will be attached before sending.
-2. **Explicit execution environment.** Reason puts Cloud and This device in a searchable environment menu with a folder chooser. Shastra can combine its existing workspace/branch and execution controls into a clearer local-folder or isolated-worktree selection, with the current path visible before a run.
-3. **Readiness in the integration library.** Reason distinguishes connected essentials, existing connections, installable catalog entries, and unavailable integrations, with a short capability description per item. Apply that distinction to Shastra's accounts and runtime library so discovery does not imply readiness.
-4. **Progressive disclosure in the composer.** Reason keeps context, environment, and model controls near a quiet prompt and teaches shortcuts with small hints. Shastra can move less-used composer actions into Add while keeping execution state and account switching visible.
+1. **Unified context picker.** Reason groups files, repositories, sessions, skills, people, and devices in its mention menu. Shastra brings file references, project context, chat history, and runtime skill files into one searchable picker, with inspectable selections before sending.
+2. **Explicit execution environment.** Reason puts Cloud and This device in a searchable environment menu with a folder chooser. Shastra combines workspace/branch and execution controls into a folder/background/isolated-worktree selection, with the current path visible before a run.
+3. **Readiness in the integration library.** Reason distinguishes connected essentials, existing connections, installable catalog entries, and unavailable integrations, with a short capability description per item. Shastra’s Connections view and runtime library distinguish responding services, installed runtimes, configured settings, copy candidates, and unavailable adapters.
+4. **Progressive disclosure in the composer.** Reason keeps context, environment, and model controls near a quiet prompt and teaches shortcuts with small hints. Shastra moves file browsing, image paste, Git, PR, and CI actions into Add while keeping execution state and account switching visible.
 
-These follow-ups are recommendations from the inspected UI; they are not implemented by this interface quality pass. Reason's Loops and Pull requests navigation entries were visible but their workflows were not evaluated.
+The shared Add picker now supports files, projects, chats, and skills, with inspectable chips and durable context snapshots. A single environment picker shows the execution folder and mode before sending. The runtime library distinguishes responding services, installed runtimes, saved configurations, copy candidates, and unavailable adapters. Secondary composer actions are under Add. A saved configuration is not treated as proof of authentication or a live MCP connection.
+
+Reason's Loops and Pull requests navigation entries were visible but their workflows were not evaluated.
