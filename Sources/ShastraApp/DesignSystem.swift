@@ -188,6 +188,8 @@ struct AppButtonStyle: PrimitiveButtonStyle {
     private func button(_ configuration: Configuration) -> some View {
         Button(role: configuration.role, action: configuration.trigger) {
             configuration.label
+                .frame(minWidth: 24, minHeight: compact ? 24 : 28)
+                .contentShape(Rectangle())
                 .foregroundStyle(kind == .primary && activeState == .key ? Surface.onAccent : Surface.text)
         }
             .font(.system(size: 12, weight: .medium))
@@ -225,7 +227,8 @@ private struct ComposerSurface: ViewModifier {
     func body(content: Content) -> some View {
         content.materialPanel(radius: Design.composerRadius)
             .overlay(RoundedRectangle(cornerRadius: Design.composerRadius)
-                .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1))
+                .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1)
+                .allowsHitTesting(false))
             .shadow(color: focused ? Surface.accent.opacity(0.10) : Color.black.opacity(0.045), radius: focused ? 22 : 18, x: 0, y: 6)
             .animation(reduceMotion ? nil : MicroMotion.settle, value: focused)
     }

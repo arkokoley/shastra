@@ -137,6 +137,12 @@ private struct AgentTaskDetail: View {
     @StateObject private var workspaceTools = WorkspaceToolsModel()
     @ViewState private var followupMode = FollowupMode.queue
     @FocusState private var composerFocused: Bool
+    private var sendBlockedReason: String? {
+        if board.busy { return "Wait for the current request to finish." }
+        if task.messages.contains(where: { $0.state == .unknown }) { return "Resolve the uncertain delivery before sending another request." }
+        if followupMode == .steer && task.status != .running { return "Steering is available while the agent is running. Choose Queue or Run alongside to start work." }
+        return nil
+    }
     private var conversation: Conversation {
         var value = Conversation(provider: task.provider, workingDirectory: task.workspace)
         value.id = task.id; value.title = task.title; value.entries = task.entries; value.vendorSessionID = task.nativeID
@@ -244,11 +250,13 @@ private struct AgentTaskDetail: View {
                     .lineLimit(2...8).textFieldStyle(.plain)
                     .modifier(ComposerImagePaste(key: task.id.uuidString))
                     .focused($composerFocused)
+                if let reason = sendBlockedReason { Text(reason).font(.caption).foregroundStyle(Surface.muted).fixedSize(horizontal: false, vertical: true) }
                 HStack {
                     Text("\(task.provider.title) · \(task.model ?? "Default model") · \(task.column.rawValue)").font(.caption).foregroundStyle(.secondary)
                     Spacer()
                     Button(followupMode == .parallel ? "Run alongside" : followupMode == .steer ? "Redirect" : task.status.isActive ? "Queue" : "Send") { board.send(task, files: app.experience.attachments[task.id.uuidString] ?? [], mode: followupMode) { app.experience.attachments[task.id.uuidString] = [] } }.buttonStyle(AppButtonStyle(kind: .primary)).keyboardShortcut(.return, modifiers: .command)
-                        .disabled(board.busy || (followupMode == .steer && task.status != .running) || task.messages.contains { $0.state == .unknown } || (board.drafts[task.id.uuidString] ?? "").isEmpty)
+                        .disabled(sendBlockedReason != nil || (board.drafts[task.id.uuidString] ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .help(sendBlockedReason ?? "Send · Command-Return")
                 }
             }.padding(16).composerSurface(focused: composerFocused)
             ComposerWorkspaceBar(path: task.workspace, isNew: false, background: true)

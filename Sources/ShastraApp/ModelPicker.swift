@@ -62,15 +62,18 @@ struct ModelPicker: View {
     var body: some View {
         Button { ui.presented.toggle() } label: {
             Label(model.isEmpty ? "Default model" : model, systemImage: "slider.horizontal.3").lineLimit(1)
-        }.buttonStyle(.plain).help("Choose model").popover(isPresented: $ui.presented) {
+        }.buttonStyle(.plain).help(model.isEmpty ? "Choose model" : "Choose model · " + model)
+            .accessibilityLabel("Choose model")
+            .accessibilityValue(model.isEmpty ? "Provider default" : model).popover(isPresented: $ui.presented) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) { Text("\(provider.title) models").font(.headline); Text(accountLabel).font(.caption).foregroundStyle(Surface.muted) }
                     Spacer()
                     if ui.loading { ProgressView().controlSize(.small) }
-                    Button { ui.forceRefresh = true; ui.reload = UUID() } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(.plain).help("Refresh models").disabled(ui.loading)
+                    Button { ui.forceRefresh = true; ui.reload = UUID() } label: { Image(systemName: "arrow.clockwise").frame(width: 28, height: 28).contentShape(Rectangle()) }.buttonStyle(.plain).accessibilityLabel("Refresh models").help("Refresh models").disabled(ui.loading)
                 }
-                TextField("Search models or enter an ID", text: $ui.query).textFieldStyle(.roundedBorder).focused($searchFocused)
+                Text("Search models or enter an ID").font(.caption).foregroundStyle(Surface.muted)
+                TextField("Model name or ID", text: $ui.query).accessibilityLabel("Search models or enter an ID").textFieldStyle(.roundedBorder).focused($searchFocused)
                 Button { choose("") } label: { Label("Provider default", systemImage: model.isEmpty ? "checkmark.circle.fill" : "circle") }.buttonStyle(.plain)
                 if !model.isEmpty, let snapshot = ui.snapshot, !snapshot.models.contains(where: { $0.id == model || $0.resolvedID == model }) {
                     Text("Selected: \(model). This ID was not returned in this catalog; it remains selected until you change it.").font(.caption).foregroundStyle(Surface.warning)
@@ -78,22 +81,7 @@ struct ModelPicker: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 4) {
                         ForEach(choices) { item in
-                            HStack(alignment: .top, spacing: 10) {
-                                Button { choose(item.id) } label: {
-                                    HStack(alignment: .top, spacing: 8) {
-                                        Image(systemName: model == item.id || model == item.resolvedID ? "checkmark.circle.fill" : "circle").foregroundStyle(Surface.accent)
-                                        VStack(alignment: .leading, spacing: 4) {
-                                            Text(item.name + (item.isDefault ? " · Default" : "")).font(.system(size: 12, weight: .medium))
-                                            Text(item.id).font(.system(size: 10, design: .monospaced)).foregroundStyle(Surface.muted)
-                                            if !item.detail.isEmpty { Text(item.detail).font(.caption).foregroundStyle(Surface.muted).lineLimit(3) }
-                                            if !item.modalities.isEmpty || !item.reasoningEfforts.isEmpty {
-                                                Text((item.modalities + (item.reasoningEfforts.isEmpty ? [] : ["Effort: " + item.reasoningEfforts.joined(separator: ", ")])).joined(separator: " · ")).font(.caption2).foregroundStyle(Surface.muted)
-                                            }
-                                        }.frame(maxWidth: .infinity, alignment: .leading)
-                                    }.padding(7).contentShape(Rectangle())
-                                }.buttonStyle(.plain)
-                                Button { toggleFavorite(item.id) } label: { Image(systemName: favorites.contains(item.id) ? "star.fill" : "star") }.buttonStyle(.plain).foregroundStyle(Surface.accent).help(favorites.contains(item.id) ? "Unpin model" : "Pin model").accessibilityLabel((favorites.contains(item.id) ? "Unpin " : "Pin ") + item.name).padding(.top, 7)
-                            }.background(model == item.id ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 8))
+                            modelRow(item)
                         }
                         if choices.isEmpty { Text(ui.loading ? "Loading provider models…" : ui.query.isEmpty ? "No catalog available" : "No matching models").font(.caption).foregroundStyle(Surface.muted).padding(.vertical, 10) }
                     }
@@ -116,6 +104,25 @@ struct ModelPicker: View {
                 }
         }
     }
+    private func modelRow(_ item: ProviderModel) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button { choose(item.id) } label: {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: model == item.id || model == item.resolvedID ? "checkmark.circle.fill" : "circle").foregroundStyle(Surface.accent)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(item.name + (item.isDefault ? " · Default" : "")).font(.system(size: 12, weight: .medium))
+                        Text(item.id).font(.system(size: 10, design: .monospaced)).foregroundStyle(Surface.muted)
+                        if !item.detail.isEmpty { Text(item.detail).font(.caption).foregroundStyle(Surface.muted).lineLimit(3) }
+                        if !item.modalities.isEmpty || !item.reasoningEfforts.isEmpty {
+                            Text((item.modalities + (item.reasoningEfforts.isEmpty ? [] : ["Effort: " + item.reasoningEfforts.joined(separator: ", ")])).joined(separator: " · ")).font(.caption2).foregroundStyle(Surface.muted)
+                        }
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                }.padding(7).contentShape(Rectangle())
+            }.buttonStyle(.plain).help(modelHelp(item))
+            Button { toggleFavorite(item.id) } label: { Image(systemName: favorites.contains(item.id) ? "star.fill" : "star").frame(width: 28, height: 28).contentShape(Rectangle()) }.buttonStyle(.plain).foregroundStyle(Surface.accent).help(favorites.contains(item.id) ? "Unpin model" : "Pin model").accessibilityLabel((favorites.contains(item.id) ? "Unpin " : "Pin ") + item.name).padding(.top, 7)
+        }.background(model == item.id ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 8))
+    }
+    private func modelHelp(_ item: ProviderModel) -> String { "\(item.name) · \(item.id)\n\(item.detail)" }
     private func choose(_ id: String) { model = id; ui.presented = false }
     private func toggleFavorite(_ id: String) {
         var all = app.experience.modelFavorites ?? [:], values = all[context.preferenceKey] ?? []

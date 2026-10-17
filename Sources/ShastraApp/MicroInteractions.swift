@@ -6,6 +6,7 @@ import ShastraCore
 enum MicroMotion {
     static let settle = Animation.spring(response: 0.32, dampingFraction: 0.76)
     static let quick = Animation.spring(response: 0.22, dampingFraction: 0.8)
+    static let hover = Animation.easeOut(duration: 0.1)
 }
 
 private struct MicroLift: ViewModifier {
@@ -15,7 +16,7 @@ private struct MicroLift: ViewModifier {
     func body(content: Content) -> some View {
         content
             .scaleEffect(!reduceMotion && enabled && hovered ? 1.018 : 1)
-            .animation(reduceMotion ? nil : MicroMotion.quick, value: hovered && enabled)
+            .animation(reduceMotion ? nil : MicroMotion.hover, value: hovered && enabled)
             .onHover { hovered = $0 }
     }
 }
@@ -118,6 +119,7 @@ struct MicroSegment<Value: Hashable>: View {
     @Binding var selection: Value
     let options: [MicroSegmentOption<Value>]
     @MicroNamespace private var thumb
+    @FocusState private var focused: Value?
     @Environment(\.isEnabled) private var enabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var body: some View {
@@ -129,15 +131,22 @@ struct MicroSegment<Value: Hashable>: View {
                         else { Text(option.title).lineLimit(1) }
                     }.font(.system(size: 11, weight: selection == option.value ? .semibold : .regular))
                         .foregroundStyle(selection == option.value ? Surface.text : Surface.muted)
-                        .frame(maxWidth: .infinity).frame(minHeight: 26)
+                        .frame(maxWidth: .infinity).frame(minWidth: 28, minHeight: 28)
                         .background {
                             if selection == option.value {
                                 RoundedRectangle(cornerRadius: 7).fill(Surface.selected)
                                     .overlay(RoundedRectangle(cornerRadius: 7).stroke(Surface.accent.opacity(0.35)))
                                     .matchedGeometryEffect(id: "selection", in: thumb)
+                                    .allowsHitTesting(false)
                             }
                         }.contentShape(Rectangle())
                 }.buttonStyle(MicroPressStyle())
+                    .focused($focused, equals: option.value)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 7).stroke(Surface.accent, lineWidth: 2)
+                            .opacity(focused == option.value ? 1 : 0).allowsHitTesting(false)
+                    }
+                    .help(option.title)
                     .accessibilityLabel(option.title)
                     .accessibilityAddTraits(selection == option.value ? [.isSelected] : [])
             }
@@ -147,7 +156,7 @@ struct MicroSegment<Value: Hashable>: View {
             .onMoveCommand { direction in
                 guard enabled, let index = options.firstIndex(where: { $0.value == selection }) else { return }
                 let next = direction == .left ? index - 1 : direction == .right ? index + 1 : index
-                if options.indices.contains(next) { selection = options[next].value }
+                if options.indices.contains(next) { selection = options[next].value; focused = options[next].value }
             }
     }
 }
@@ -161,7 +170,7 @@ struct MicroSwitchStyle: ToggleStyle {
             HStack(spacing: 8) {
                 configuration.label
                 SwitchThumb(on: configuration.isOn, reduceMotion: reduceMotion)
-            }.contentShape(Rectangle())
+            }.frame(minHeight: 28).contentShape(Rectangle())
         }.buttonStyle(SwitchPressStyle())
             .foregroundStyle(Surface.text).opacity(enabled ? 1 : 0.5)
             .accessibilityRepresentation {
@@ -199,7 +208,7 @@ struct MicroCheckStyle: ToggleStyle {
                             .stroke(Surface.onAccent, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round)).padding(3)
                     }.frame(width: 16, height: 16)
                 configuration.label
-            }.contentShape(Rectangle())
+            }.frame(minHeight: 28).contentShape(Rectangle())
         }.buttonStyle(MicroPressStyle())
             .animation(reduceMotion ? nil : MicroMotion.settle, value: configuration.isOn)
             .accessibilityRepresentation { Toggle(isOn: configuration.$isOn) { configuration.label }.toggleStyle(.checkbox) }
@@ -249,7 +258,8 @@ struct MicroToolTrace: View {
                             .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                         if entry.id != entries.last?.id { Divider() }
                     }
-                }.padding(12).transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+                }.padding(12).transition(reduceMotion ? .identity : .asymmetric(
+                    insertion: .opacity.combined(with: .offset(y: -6)), removal: .opacity))
             }
         }.animation(reduceMotion ? nil : MicroMotion.settle, value: expanded).padding(.vertical, 3)
     }

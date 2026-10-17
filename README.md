@@ -8,6 +8,8 @@ The current implementation roadmap is [Desktop continuity and coordination](BUIL
 
 ## Available now
 
+Native control improvements follow the [Interfaces audit](Docs/InterfaceGuidelines.md): keyboard file navigation, visible selection focus, larger hit areas, descriptive labels, inline send explanations, and review retry actions.
+
 - **Native micro-interactions**: spring selection controls, multitasking switches and checkboxes, animated task status, compact tool traces, composer focus feedback, folder reveals, and copy confirmation. See the [interaction guide](Docs/MicroInteractions.md) for React Bits references and accessibility behavior.
 
 See the [collaboration workflow guide](Docs/CollaborationWorkflow.md) for project context, annotations, forks, multitasking, and change review.

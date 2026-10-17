@@ -89,7 +89,7 @@ struct WorkspaceToolsView: View {
                                 .buttonStyle(.plain).help("Close \(file.lastPathComponent)")
                         }
                         .foregroundStyle(tools.selectedFile == file && tools.tab == .preview ? Surface.text : Surface.muted)
-                        .padding(.horizontal, 10).frame(height: 28)
+                        .padding(.horizontal, 10).frame(minWidth: 28, minHeight: 28)
                         .background(tools.selectedFile == file && tools.tab == .preview ? Surface.selected.opacity(0.55) : .clear,
                                     in: RoundedRectangle(cornerRadius: 7))
                     }
@@ -153,7 +153,7 @@ struct WorkspaceToolsView: View {
             }
                 .font(.system(size: 12, weight: selected ? .semibold : .regular)).lineLimit(1)
                 .foregroundStyle(selected ? Surface.accent : Surface.muted)
-                .padding(.horizontal, 10).frame(height: 28)
+                .padding(.horizontal, 10).frame(minWidth: 28, minHeight: 28)
                 .glassSurface(radius: 9, interactive: true, tint: selected ? Surface.selected : nil,
                               opaque: selected ? Surface.selected : Surface.raised)
         }.buttonStyle(.plain).accessibilityLabel(title).help(title)
@@ -251,35 +251,36 @@ private struct FileTreeRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
-                if isDirectory {
-                    Image(systemName: state.expanded ? "chevron.down" : "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 14)
-                } else {
-                    Color.clear.frame(width: 14)
+            Button {
+                if isDirectory { state.toggle(url: url, showHidden: showHidden) }
+                else { onSelect(url) }
+            } label: {
+                HStack(spacing: 6) {
+                    if isDirectory {
+                        Image(systemName: state.expanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 14)
+                    } else {
+                        Color.clear.frame(width: 14)
+                    }
+                    if isDirectory { MicroFolderIcon(expanded: state.expanded) }
+                    else { Image(systemName: FileIcon.symbol(for: url)).font(.system(size: 12)).foregroundStyle(Surface.muted).frame(width: 16) }
+                    Text(url.lastPathComponent)
+                        .font(.system(size: 12)).lineLimit(1)
+                    Spacer(minLength: 0)
                 }
-                if isDirectory { MicroFolderIcon(expanded: state.expanded) }
-                else { Image(systemName: FileIcon.symbol(for: url)).font(.system(size: 12)).foregroundStyle(Surface.muted).frame(width: 16) }
-                Text(depth == 0 ? url.lastPathComponent : url.lastPathComponent)
-                    .font(.system(size: 12)).lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .padding(.leading, CGFloat(depth * 13 + 10))
-            .padding(.trailing, 10).frame(height: 27)
-            .background(selected == url ? Surface.selected.opacity(0.65) : .clear,
-                        in: RoundedRectangle(cornerRadius: 6))
-            .contentShape(Rectangle())
+                .padding(.leading, CGFloat(depth * 13 + 10))
+                .padding(.trailing, 10).frame(height: 27)
+                .background(selected == url ? Surface.selected.opacity(0.65) : .clear,
+                            in: RoundedRectangle(cornerRadius: 6))
+                .contentShape(Rectangle())
+            }.buttonStyle(.plain)
+            .help(url.path)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(url.lastPathComponent)
             .accessibilityValue(isDirectory ? (state.expanded ? "Expanded folder" : "Collapsed folder") : "File")
-            .accessibilityAddTraits(.isButton)
-            .onTapGesture {
-                if isDirectory {
-                    state.toggle(url: url, showHidden: showHidden)
-                } else { onSelect(url) }
-            }
+            .accessibilityAddTraits(selected == url ? [.isSelected] : [])
             if state.expanded {
                 if state.isLoading {
                     Text("Loading folder…").font(.caption2).foregroundStyle(.tertiary)

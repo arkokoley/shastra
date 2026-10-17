@@ -53,18 +53,25 @@ struct GitChangesPane: View {
                 Label("Change review", systemImage: "square.stack.3d.up").font(.headline)
                 Spacer()
                 Button(state.trace ? "Show changes" : "Trace") { state.trace.toggle() }.buttonStyle(AppButtonStyle(compact: true))
-                Button { state.refresh(root: root, base: base) } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(AppButtonStyle(compact: true)).disabled(state.busy)
+                Button { state.refresh(root: root, base: base) } label: { Image(systemName: "arrow.clockwise") }.buttonStyle(AppButtonStyle(compact: true)).disabled(state.busy).accessibilityLabel("Refresh changes").help("Refresh changes")
             }.padding(12)
             MicroSegment(label: "Review scope", selection: $state.scope, options:
                 [.init(value: .working, title: "Unstaged"), .init(value: .staged, title: "Staged")]
                 + (base == nil ? [] : [.init(value: .task, title: "Task changes")]))
                 .padding(.horizontal, 12).padding(.bottom, 10)
-            if let error = state.error { Text(error).font(.caption).foregroundStyle(Surface.danger).padding(10).textSelection(.enabled) }
+            if let error = state.error {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Could not read changes", systemImage: "exclamationmark.triangle").font(.caption.bold()).foregroundStyle(Surface.danger)
+                    Text(error).font(.caption).textSelection(.enabled)
+                    Button("Retry reading changes") { state.refresh(root: root, base: base) }
+                        .buttonStyle(AppButtonStyle(compact: true)).disabled(state.busy)
+                }.padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            }
             Divider()
             if state.trace { trace }
             else if state.busy && state.snapshot == nil { ProgressView("Reading changes…").frame(maxWidth: .infinity, maxHeight: .infinity) }
             else if let snapshot = state.snapshot {
-                if snapshot.files.isEmpty { ContentUnavailableView("No changes in this scope", systemImage: "checkmark.circle").frame(maxHeight: .infinity) }
+                if snapshot.files.isEmpty { ContentUnavailableView("No changes in this scope", systemImage: "checkmark.circle", description: Text("Choose another scope or refresh after editing files.")).frame(maxHeight: .infinity) }
                 else {
                     ScrollView {
                         LazyVStack(spacing: 2) {
@@ -76,7 +83,7 @@ struct GitChangesPane: View {
                                         Text("+\(item.hunks.reduce(0) { $0 + $1.added })").foregroundStyle(.green)
                                         Text("−\(item.hunks.reduce(0) { $0 + $1.removed })").foregroundStyle(.red)
                                     }.font(.caption).padding(8).background(state.path == item.path ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 7))
-                                }.buttonStyle(.plain)
+                                }.buttonStyle(.plain).help(item.path)
                             }
                         }.padding(6)
                     }.frame(maxHeight: 155)

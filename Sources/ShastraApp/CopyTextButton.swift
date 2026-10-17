@@ -12,13 +12,17 @@ struct CopyTextButton: View {
         Button {
             NSPasteboard.general.clearContents()
             interaction.copied = NSPasteboard.general.setString(text, forType: .string)
-            if interaction.copied { copyRevision += 1 }
+            if interaction.copied {
+                copyRevision += 1
+                NSAccessibility.post(element: NSApplication.shared, notification: .announcementRequested,
+                    userInfo: [.announcement: "Copied to clipboard", .priority: NSAccessibilityPriorityLevel.low.rawValue])
+            }
         } label: {
             HStack(spacing: 5) {
                 Image(systemName: interaction.copied ? "checkmark" : "doc.on.doc")
                     .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
                 Text(interaction.copied ? "Copied" : "Copy").contentTransition(.opacity)
-            }.font(.system(size: 11)).frame(width: 64, alignment: .leading)
+            }.font(.system(size: 11)).frame(width: 64, alignment: .leading).frame(minHeight: 28).contentShape(Rectangle())
         }
         .buttonStyle(MicroPressStyle())
         .foregroundStyle(interaction.copied ? Surface.accent : Surface.muted)
