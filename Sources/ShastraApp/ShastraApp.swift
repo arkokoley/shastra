@@ -9,6 +9,17 @@ import ShastraCore
     @Published var collaborationRoute: CollaborationRoute?
     let collaborationStore = CollaborationStore()
     @Published var chatFilter = "All"
+    @Published var defaultAccessMode = AgentAccessMode.savedDefault
+    func setAccessMode(_ mode: AgentAccessMode, conversationID: UUID? = nil) {
+        defaultAccessMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: "agentAccessMode")
+        guard let id = conversationID, let index = conversations.firstIndex(where: { $0.id == id }),
+              ![.running, .connecting, .waitingForApproval].contains(conversations[index].state) else { return }
+        conversations[index].accessMode = mode
+        sessions.removeValue(forKey: id)?.stop()
+        sessionTokens.removeValue(forKey: id)
+        scheduleSave()
+    }
     @Published var newModel = ""
     @Published var showRuntimeLibrary = false
     @Published var jumpToEntryID: UUID?
@@ -287,6 +298,7 @@ import ShastraCore
         if newChatUsesService || newChatIsolated {
             var params = ["objective": messageWithFiles, "title": String(message.prefix(60)), "provider": selectedProvider.rawValue,
                           "workspace": workingDirectory, "isolate": String(newChatIsolated)]
+            params["accessMode"] = defaultAccessMode.rawValue
             if !newModel.isEmpty { params["model"] = newModel }
             if let newAccountID { params["accountID"] = newAccountID.uuidString }
             agentBoard.perform("agents.spawn", params: params, selectResult: true) { [weak self] in
@@ -322,6 +334,7 @@ import ShastraCore
             conversation.accountID = id
             conversation.profileDirectory = nil
         }
+        conversation.accessMode = defaultAccessMode
         conversation.selectedModel = newModel.isEmpty ? nil : newModel
         conversation.migrateEndpoints()
         conversations.insert(conversation, at: 0)
@@ -492,7 +505,7 @@ import ShastraCore
               !hasUnresolvedDelivery(chat), chat.historyLoaded != false,
               let index = conversations.firstIndex(where: { $0.id == chat.id }) else { return }
         if let task = backgroundTask(for: chat) { openAgent(task.id); return }
-        var source = chat; source.migrateEndpoints()
+        var source = chat; source.migrateEndpoints(); source.accessMode = chat.accessMode ?? .workspace
         do { try source.validateResumeAccount() } catch { notice = error.localizedDescription; return }
         guard source.resumeEndpoint != nil else { notice = "Send the first message in this chat before moving it to background execution."; return }
         sessions.removeValue(forKey: chat.id)?.stop()
@@ -602,7 +615,7 @@ import ShastraCore
                     } else { accountConfiguration = nil }
                     session = try AgentSession(provider: conversation.provider,
                                                workingDirectory: conversation.workingDirectory,
-                    profileDirectory: conversation.profileDirectory, accountConfiguration: accountConfiguration, model: conversation.selectedModel) { [weak self] event in
+                    profileDirectory: conversation.profileDirectory, accountConfiguration: accountConfiguration, model: conversation.selectedModel, accessMode: conversation.accessMode ?? .workspace) { [weak self] event in
                         Task { @MainActor [weak self] in
                             guard let self, self.sessionTokens[id] == token else { return }
                             self.handle(event, for: id)
@@ -770,16 +783,15 @@ import ShastraCore
 
     func setAccount(_ accountID: UUID?, for conversationID: UUID) {
         guard let index = conversations.firstIndex(where: { $0.id == conversationID }),
-              ![.connecting, .running, .waitingForApproval].contains(conversations[index].state) else { return }
+              ![.connecting, .running, .waitingForApproval].contains(conversations[index].state),
+              !hasUnresolvedDelivery(conversations[index]) else { return }
         guard accountID != conversations[index].accountID else { return }
         if let accountID, !accounts.contains(where: { $0.id == accountID && $0.provider == conversations[index].provider }) { return }
         sessions.removeValue(forKey: conversationID)?.stop()
         sessionTokens.removeValue(forKey: conversationID)
         promptTasks.removeValue(forKey: conversationID)?.cancel()
-        conversations[index].accountID = accountID
-        conversations[index].profileDirectory = nil
-        conversations[index].state = .idle
-        append(.init(kind: .status, text: "Account changed to \(accountLabel(for: conversations[index]))."), to: conversationID)
+        conversations[index].switchAccount(to: accountID)
+        append(.init(kind: .status, text: "Account changed to \(accountLabel(for: conversations[index])). Continue here; the next runtime receives this chat’s history."), to: conversationID)
         scheduleSave()
     }
 

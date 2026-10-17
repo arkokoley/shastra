@@ -364,3 +364,48 @@ private func spawn(_ service: AgentService, path: String, key: String = UUID().u
     let token = try #require(harness.token(main.id))
     #expect(await service.handle(.init(method: "task.multitask", params: ["taskID": main.id.uuidString, "enabled": "true"], token: token)).error != nil)
 }
+
+@Test func savedTaskPermissionsApplyAfterReconnectAndWorkersCannotElevate() async throws {
+    let root = try serviceFolder(); defer { try? FileManager.default.removeItem(at: root) }
+    let harness = RuntimeHarness()
+    let service = try AgentService(directory: root, cliPath: "/test/cli", adminToken: "admin", runtimeFactory: harness.create)
+    let task = try await spawn(service, path: root.path)
+    try await eventually { harness.runtime(task.id)?.count == 1 }
+    let workerToken = try #require(harness.token(task.id))
+    let denied = await service.handle(.init(method: "task.access", params: ["mode": "full"], token: workerToken))
+    #expect(denied.error != nil)
+    let running = await service.handle(.init(method: "task.access", params: ["taskID": task.id.uuidString, "mode": "full"], token: "admin"))
+    #expect(running.error != nil)
+    harness.runtime(task.id)?.finish("Done")
+    try await eventually { try await snapshot(service).tasks.first?.status == .completed }
+    let changed = await service.handle(.init(method: "task.access", params: ["taskID": task.id.uuidString, "mode": "full"], token: "admin"))
+    #expect(changed.error == nil)
+    #expect(harness.runtime(task.id)?.stopped == true)
+    #expect(try await snapshot(service).tasks.first?.accessMode == .full)
+    #expect((await service.handle(.init(method: "snapshot", token: workerToken))).error != nil)
+    let reopened = try AgentService(directory: root, cliPath: "/test/cli", adminToken: "next", runtimeFactory: harness.create)
+    #expect(try await snapshot(reopened, token: "next").tasks.first?.accessMode == .full)
+}
+
+@Test func backgroundAccountSwitchKeepsHistoryAndStartsNewRuntime() async throws {
+    let root = try serviceFolder(); defer { try? FileManager.default.removeItem(at: root) }
+    let accounts = AccountStore(directory: root.appending(path: "Accounts"))
+    let account = try await accounts.capture(provider: .codex, data: Data(#"{"OPENAI_API_KEY":"synthetic-test-only"}"#.utf8))
+    let harness = RuntimeHarness()
+    let service = try AgentService(directory: root, cliPath: "/test/cli", adminToken: "admin", runtimeFactory: harness.create)
+    let task = try await spawn(service, path: root.path)
+    try await eventually { harness.runtime(task.id)?.count == 1 }
+    harness.runtime(task.id)?.finish("Preserve this result")
+    try await eventually { try await snapshot(service).tasks.first?.status == .completed }
+    let response = await service.handle(.init(method: "task.account", params: ["taskID": task.id.uuidString, "accountID": account.id.uuidString], token: "admin"))
+    #expect(response.error == nil)
+    let switched = try #require(try await snapshot(service).tasks.first)
+    #expect(switched.id == task.id && switched.accountID == account.id)
+    #expect(switched.nativeID == nil)
+    #expect(switched.entries.contains { $0.text.contains("Preserve this result") })
+    let sent = await service.handle(.init(method: "agents.send", params: ["taskID": task.id.uuidString, "message": "Continue"], token: "admin"))
+    #expect(sent.error == nil)
+    try await eventually { harness.runtime(task.id)?.count == 1 && harness.runtime(task.id)?.stopped == false }
+    #expect(harness.runtime(task.id)?.resumedID == nil)
+    #expect(harness.runtime(task.id)?.lock.withLock { harness.runtime(task.id)?.prompts.first?.contains("Preserve this result") } == true)
+}

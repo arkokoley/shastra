@@ -87,6 +87,7 @@ extension AppModel {
             var params = ["objective": ChatAnnotation.prompt([annotation]), "title": String(annotation.comment.prefix(60)),
                           "provider": source.provider.rawValue, "workspace": source.workspace, "isolate": "true",
                           "annotationIDs": String(decoding: try JSONEncoder().encode([annotation.id]), as: UTF8.self)]
+            params["accessMode"] = defaultAccessMode.rawValue
             if let id = source.accountID { params["accountID"] = id.uuidString }
             if let model = source.model { params["model"] = model }
             if source.isTask { params["parentID"] = source.id.uuidString; params["notifyParent"] = "true" }
@@ -101,7 +102,7 @@ extension AppModel {
         guard let current = chatSource(source.id)?.entries.first(where: { $0.id == entry.id }), current.text == entry.text else {
             throw ShastraError.invalidResponse("The source message changed. Reopen the fork before continuing.")
         }
-        var params = ["sourceID": source.id.uuidString, "entryID": entry.id.uuidString,
+        var params = ["accessMode": defaultAccessMode.rawValue, "sourceID": source.id.uuidString, "entryID": entry.id.uuidString,
                       "sourceTitle": source.title, "workspace": source.workspace,
                       "provider": provider.rawValue, "objective": request, "title": "Fork: " + String(source.title.prefix(50)),
                       "isolate": String(isolated), "sourceDigest": StableIdentity.hash(entry.text)]

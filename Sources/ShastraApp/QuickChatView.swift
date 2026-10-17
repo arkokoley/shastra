@@ -75,6 +75,9 @@ struct QuickChatView: View {
                     HStack(spacing: 16) {
                         ModelPicker(provider: app.selectedProvider, model: $app.newModel, accountID: app.newAccountID, workspace: app.workingDirectory)
                             .font(.system(size: 12)).foregroundStyle(Surface.muted)
+                        if app.selectedProvider == .codex {
+                            AgentAccessMenu(mode: app.defaultAccessMode) { app.setAccessMode($0) }
+                        }
                         Spacer(minLength: 8)
                         Toggle("Keep working when the window closes", isOn: $app.newChatUsesService).toggleStyle(MicroCheckStyle()).font(.caption)
                     }

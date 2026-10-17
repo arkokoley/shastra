@@ -21,7 +21,7 @@ See the [collaboration workflow guide](Docs/CollaborationWorkflow.md) for projec
 - **Change review**: task-start comparisons, file/hunk navigation, revision-bound review comments, feedback to the originating chat, and selected-hunk stage, unstage, or confirmed discard. The Trace view links annotated requests, tasks, changes, and recorded tool output. Stale diffs require refresh. Task comparisons preserve the real Git index and exclude preexisting changes.
 
 - **Agents workspace**: background worker chats, a task board, searchable transcripts, an attention inbox, provider/account/model selection, queued follow-ups, dependencies, parent/child assignments, and side chats carrying the parent’s available context. Each worker exposes its files, terminal, browser, and Git diff panels. Drafts and selected agent persist.
-- **Managed coordination**: per-runtime MCP tools for spawning workers, reading authorized task-family history, messaging, cancellation, publishing results, and receiving queued parent reports. The service defaults to four parallel agents, at most two turns per provider account, and one Shastra writer per shared workspace. Native approval policies remain in effect.
+- **Managed coordination**: per-runtime MCP tools for spawning workers, reading authorized task-family history, messaging, cancellation, publishing results, and receiving queued parent reports. The service defaults to four parallel agents, at most two turns per provider account, and one Shastra writer per shared workspace. Codex permissions are saved per task and inherited by delegated workers. Other providers retain their native approval policies.
 - **Workspaces**: isolated Git worktrees include staged, unstaged, and eligible untracked state; private untracked filenames are excluded. Checkpoints can start a new worker without replacing the original workspace. Archive/restore preserves dirty changes and refuses to remove ignored/private files that are not backed up. Committed work can be integrated through the service CLI after clean-tree checks.
 - **Background execution**: `ShastraService` owns Agents-workspace runtimes independently of the UI. A private Unix socket and scoped MCP grants expose the durable queue. Restarted active work requires ownership reconciliation; uncertain dispatches cannot be replayed automatically. This helper starts with the app, not at system login.
 
@@ -67,13 +67,23 @@ From **Agents workspace**, **New agent** (⌘⇧N) and **New chat** use this sam
 
 The bottom status bar follows the selected chat's provider/account. Codex displays real remaining usage windows; click it for reset dates, additional buckets, and manual refresh. Limits refresh every minute through the read-only app-server API without starting a model turn. Unsupported providers and accounts without reported windows show **Limits unavailable**. Failed refreshes retain the last successful reading with a warning and timestamp.
 
+## Saved Codex permissions
+
+Choose **Codex permissions** beneath an existing chat composer or beside the model picker in a new chat:
+
+- **Ask for approval** asks before untrusted commands and confines edits to the workspace.
+- **Workspace access** allows workspace edits and asks when broader file or network access is needed.
+- **Full access** allows file and internet access without tool approval prompts.
+
+The choice is saved on the chat and becomes the default for future chats. Background agents expose the same menu, retain it after service restarts, and pass it to delegated workers. Existing chats without a saved choice use Workspace access. Change permissions while the agent is idle; reconnecting explicitly reapplies them on thread start/resume and each turn through the [Codex App Server permission fields](https://learn.chatgpt.com/docs/app-server). Provider or organization requirements can still restrict access, and questions asking for user input remain questions. Claude, Cursor, and Grok keep their provider-native permission behavior.
+
 ## Add and switch accounts
 
 **Switch accounts without restarting Shastra or manually rebuilding your conversation context.** Choose a saved account from the chat composer and keep your project and conversation in view. Wait for the current turn to finish; switching starts a fresh vendor session with the chat's context.
 
 1. Open **Accounts**, choose Codex, Cursor, Claude, or Grok, and enter an optional name such as Work or Personal.
 2. Choose **Sign in** to finish the vendor's browser flow, **Save current sign-in** to keep the local login, or **Import → Import saved accounts** to read supported account-manager profiles. Individual authentication JSON files can also be imported.
-3. Choose **Use by default** for new chats. In an existing chat, use the account menu beside the agent name in the composer. Switching starts a fresh vendor session with the chat's context; wait for a running turn to finish before switching.
+3. Choose **Use by default** for new chats. In an existing chat, use its composer account menu; background agents have an account menu below the composer. Switching starts a fresh vendor session with the chat's context; wait for a running turn to finish before switching. The same Shastra chat, draft, workspace, and attributed history remain in place. Switching back also carries intervening work forward rather than reopening a stale thread.
 
 The implementation uses the snapshot approach examined in [Loongphy/codex-auth](https://github.com/Loongphy/codex-auth), with compatible imports from that tool, [reloadlife/cursor-account-switcher](https://github.com/reloadlife/cursor-account-switcher), and [niuahua/grok-switch](https://github.com/niuahua/grok-switch). It reads their saved formats directly and does not install or execute their binaries.
 

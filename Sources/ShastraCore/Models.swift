@@ -58,6 +58,7 @@ public struct Conversation: Identifiable, Codable, Sendable {
     public var updatedAt: Date
     public var endpoints: [NativeEndpoint]?
     public var activeEndpointID: UUID?
+    public var accessMode: AgentAccessMode?
     public var selectedModel: String?
     public var savedDraft: String?
     public var managedContinuationEnabled: Bool?

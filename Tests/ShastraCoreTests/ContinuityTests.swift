@@ -224,7 +224,9 @@ private actor ProbeAdapter: DesktopSurfaceAdapter {
     #expect(chat.sourceEndpoint?.nativeThreadID == "original")
     #expect(throws: (any Error).self) { try chat.recordResumedEndpoint(nativeID: "replacement") }
     chat.accountID = UUID()
-    #expect(throws: (any Error).self) { try chat.validateResumeAccount() }
+    try chat.validateResumeAccount()
+    #expect(chat.resumeEndpoint == nil)
+    #expect(chat.sourceEndpoint?.nativeThreadID == "original")
     chat.provider = .claude
     #expect(chat.resumeEndpoint == nil)
 }

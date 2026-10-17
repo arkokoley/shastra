@@ -25,7 +25,7 @@ public actor AgentService {
     public init(directory: URL, cliPath: String, adminToken: String, runtimeFactory: ManagedRuntimeFactory? = nil) throws {
         self.runtimeFactory = runtimeFactory ?? { task, configuration, coordination, handler in
             try AgentSession(provider: task.provider, workingDirectory: task.workspace, profileDirectory: task.profileDirectory,
-                             accountConfiguration: configuration, coordination: coordination, model: task.model, eventHandler: handler)
+                             accountConfiguration: configuration, coordination: coordination, model: task.model, accessMode: task.accessMode ?? .workspace, eventHandler: handler)
         }
         contextDirectory = directory.appending(path: "ContextArchives")
         database = try ContinuityDatabase(directory: directory)
@@ -86,7 +86,7 @@ public actor AgentService {
         }
         switch request.method {
         case "health": return "ready"
-        case "service.capabilities": return "collaboration-v1"
+        case "service.capabilities": return "access-continuity-v1"
         case "service.shutdown":
             guard caller == nil, !state.tasks.contains(where: { $0.status.isActive || $0.status == .queued }), creationInProgress.isEmpty else { throw ShastraError.unsupported("Service has pending work; stop it before shutting down") }
             shuttingDown = true
@@ -123,6 +123,7 @@ public actor AgentService {
             if let accountID = chat.accountID { _ = try await accounts.configuration(for: accountID, provider: chat.provider) }
             var task = AgentTask(id: chat.id, title: chat.title, objective: "Continue this chat", provider: chat.provider,
                                  workspace: chat.workingDirectory, conversationID: chat.id, accountID: chat.accountID, model: chat.selectedModel)
+            task.accessMode = chat.accessMode
             task.nativeID = endpoint.nativeThreadID; task.profileDirectory = chat.profileDirectory
             task.entries = chat.entries; task.messages = []; task.status = .completed; task.column = .review
             task.entries.append(.init(kind: .status, text: "Background execution enabled. The next message resumes the same provider thread."))
@@ -130,6 +131,43 @@ public actor AgentService {
         case "agents.fork", "agents.parallel":
             guard caller == nil else { throw ShastraError.unsupported("Only the user can fork a message or request parallel work directly") }
             return try await branch(request)
+        case "task.account":
+            guard caller == nil else { throw ShastraError.unsupported("Only the user can switch accounts") }
+            let id = try target(), index = try position(id)
+            guard !state.tasks[index].status.isActive, state.tasks[index].status != .queued,
+                  !state.tasks[index].messages.contains(where: { [.queued, .dispatching, .unknown].contains($0.state) }) else {
+                throw ShastraError.unsupported("Switch accounts when the agent is idle and delivery is resolved")
+            }
+            let accountID: UUID?
+            if let raw = p["accountID"], !raw.isEmpty {
+                guard let parsed = UUID(uuidString: raw), try await accounts.list().contains(where: { $0.id == parsed && $0.provider == state.tasks[index].provider }) else {
+                    throw ShastraError.invalidResponse("Choose an available account for this provider")
+                }
+                accountID = parsed
+            } else { accountID = nil }
+            guard !state.tasks[index].status.isActive, state.tasks[index].status != .queued else { throw ShastraError.unsupported("Wait for this agent to finish") }
+            if accountID == state.tasks[index].accountID { return "Account unchanged" }
+            state.grants = state.grants.filter { $0.value != id }
+            sessions.removeValue(forKey: id)?.stop(); runtimeTokens.removeValue(forKey: id)
+            eventTasks.removeValue(forKey: id)?.cancel()
+            state.tasks[index].accountID = accountID; state.tasks[index].profileDirectory = nil
+            state.tasks[index].nativeID = nil
+            state.tasks[index].entries.append(.init(kind: .continuation, text: "Account switched. The next runtime receives this chat’s history."))
+            try save(); return "Account switched"
+        case "task.access":
+            guard caller == nil else { throw ShastraError.unsupported("Only the user can change permissions") }
+            let id = try target(), index = try position(id)
+            guard !state.tasks[index].status.isActive, state.tasks[index].status != .queued,
+                  !state.tasks[index].messages.contains(where: { $0.state == .unknown || $0.state == .dispatching }),
+                  let mode = p["mode"].flatMap(AgentAccessMode.init(rawValue:)), state.tasks[index].provider == .codex else {
+                throw ShastraError.unsupported("Choose permissions when this Codex agent is idle and delivery is resolved")
+            }
+            state.tasks[index].accessMode = mode
+            state.grants = state.grants.filter { $0.value != id }
+            sessions.removeValue(forKey: id)?.stop(); runtimeTokens.removeValue(forKey: id)
+            eventTasks.removeValue(forKey: id)?.cancel()
+            state.tasks[index].entries.append(.init(kind: .status, text: "Permissions: \(mode.title)."))
+            try save(); return "Permissions saved"
         case "task.multitask":
             guard caller == nil else { throw ShastraError.unsupported("Only the user can change multitasking mode") }
             let id = try target()
@@ -219,6 +257,7 @@ public actor AgentService {
                 model: p["model"], acceptance: p["acceptance"] ?? "", managedWorkspaceID: allocated?.id,
                 dependencies: dependencies, notifyParent: p["notifyParent"] != "false")
             let identity = await WorkspaceIdentityCatalog().resolve([workspace])[workspace] ?? .folder(workspace)
+            task.accessMode = caller == nil ? p["accessMode"].flatMap(AgentAccessMode.init(rawValue:)) ?? parentTask?.accessMode : parentTask?.accessMode
             task.projectID = identity.projectID
             task.reviewBase = try? ChangeReview.baseline(task.workspace)
             if caller == nil, let raw = p["forkOrigin"] { task.forkOrigin = try JSONDecoder().decode(ForkOrigin.self, from: Data(raw.utf8)) }
@@ -369,6 +408,7 @@ public actor AgentService {
         var params = p
         params["workspace"] = source?.workspace ?? p["workspace"]
         params["provider"] = p["provider"] ?? source?.provider.rawValue
+        params["accessMode"] = source?.accessMode?.rawValue ?? p["accessMode"]
         params["notifyParent"] = request.method == "agents.parallel" ? "true" : "false"
         if let source { params["parentID"] = source.id.uuidString }
         params["isolate"] = p["isolate"] ?? "true"

@@ -13,6 +13,7 @@ public final class AgentSession: @unchecked Sendable {
     private var sessionID: String?
     private var turnID: String?
     private var selectedModel: String?
+    private let accessMode: AgentAccessMode
     private let coordination: RuntimeCoordination?
     private var streamedMessageIDs: Set<String> = []
     private var approvalMethods: [String: String] = [:]
@@ -22,7 +23,7 @@ public final class AgentSession: @unchecked Sendable {
 
     public func stop() { rpc.stop() }
 
-    public init(provider: Provider, workingDirectory: String, profileDirectory: String?, accountConfiguration: AccountLaunchConfiguration? = nil, coordination: RuntimeCoordination? = nil, model: String? = nil,
+    public init(provider: Provider, workingDirectory: String, profileDirectory: String?, accountConfiguration: AccountLaunchConfiguration? = nil, coordination: RuntimeCoordination? = nil, model: String? = nil, accessMode: AgentAccessMode = .workspace,
                 eventHandler: @escaping @Sendable (SessionEvent) -> Void) throws {
         guard provider.supportedInMVP else {
             throw ShastraError.unsupported("\(provider.title) adapter is planned but not available in this build")
@@ -39,6 +40,7 @@ public final class AgentSession: @unchecked Sendable {
         self.eventHandler = eventHandler
         self.coordination = coordination
         self.selectedModel = model
+        self.accessMode = accessMode
         var environment: [String: String] = [:]
         if let profileDirectory, !profileDirectory.isEmpty {
             switch provider {
@@ -81,11 +83,13 @@ public final class AgentSession: @unchecked Sendable {
                 var params: [String: Any] = ["threadId": existingSessionID, "cwd": workingDirectory]
                 if let model = lock.withLock({ selectedModel }) { params["model"] = model }
                 if let coordination { params["config"] = coordination.codexConfiguration }
+                params.merge(accessMode.threadParameters) { _, chosen in chosen }
                 result = try await rpc.request("thread/resume", params: params).value
             } else {
                 var params: [String: Any] = ["cwd": workingDirectory, "ephemeral": ephemeral]
                 if let model = lock.withLock({ selectedModel }) { params["model"] = model }
                 if let coordination { params["config"] = coordination.codexConfiguration }
+                params.merge(accessMode.threadParameters) { _, chosen in chosen }
                 result = try await rpc.request("thread/start", params: params).value
             }
             guard let id = (result["thread"] as? [String: Any])?["id"] as? String else {
@@ -147,6 +151,7 @@ public final class AgentSession: @unchecked Sendable {
         if provider == .codex {
             var params: [String: Any] = ["threadId": id, "input": [["type": "text", "text": text]]]
             if let model = lock.withLock({ selectedModel }) { params["model"] = model }
+            params.merge(accessMode.turnParameters(workspace: workingDirectory)) { _, chosen in chosen }
             let result = try await rpc.request("turn/start", params: params).value
             lock.withLock { turnID = (result["turn"] as? [String: Any])?["id"] as? String }
             if lock.withLock({ cancellationRequested }) { try await cancel() }

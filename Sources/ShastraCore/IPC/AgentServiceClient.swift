@@ -14,7 +14,7 @@ public actor AgentServiceClient {
     }
     public func ensureRunning() async throws {
         if (try? await request("health")) == "ready" {
-            if (try? await request("service.capabilities")) == "collaboration-v1" { return }
+            if (try? await request("service.capabilities")) == "access-continuity-v1" { return }
             // The old helper may outlive the window. Its shutdown guard preserves active work.
             do { _ = try await request("service.shutdown") }
             catch { throw ShastraError.unsupported("The background service needs an update. Finish or stop its pending tasks, then reconnect. " + error.localizedDescription) }

@@ -625,6 +625,12 @@ private struct ConversationPane: View {
             }
             .padding(14)
             .composerSurface(focused: composerFocused)
+            if conversation.provider == .codex {
+                AgentAccessMenu(mode: conversation.accessMode ?? .workspace,
+                                disabled: [.running, .connecting, .waitingForApproval].contains(conversation.state)) {
+                    model.setAccessMode($0, conversationID: conversation.id)
+                }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8)
+            }
             ComposerWorkspaceBar(path: conversation.workingDirectory, isNew: false, background: false)
             if conversation.sourceIdentity != nil, conversation.sourceEndpoint?.workingDirectory == nil,
                conversation.linkedWorkspaceConfirmed != true {

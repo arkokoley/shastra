@@ -259,6 +259,28 @@ private struct AgentTaskDetail: View {
                         .help(sendBlockedReason ?? "Send · Command-Return")
                 }
             }.padding(16).composerSurface(focused: composerFocused)
+            HStack(spacing: 16) {
+                if AccountStore.providers.contains(task.provider) {
+                    Menu {
+                        Button("Current sign-in") { action("task.account", ["accountID": ""]) }
+                        ForEach(app.accounts.filter { $0.provider == task.provider }) { account in
+                            Button(account.label) { action("task.account", ["accountID": account.id.uuidString]) }
+                        }
+                        Divider()
+                        Button("Manage accounts…") { app.accountProvider = task.provider; app.showAccounts = true }
+                    } label: {
+                        Label(task.accountID.flatMap { id in app.accounts.first { $0.id == id }?.label } ?? "Current sign-in", systemImage: "person.crop.circle")
+                    }.menuStyle(.borderlessButton).fixedSize().font(.system(size: 12))
+                        .disabled(task.status.isActive || task.status == .queued || board.busy)
+                        .help("Switch accounts and keep this chat’s history")
+                }
+                if task.provider == .codex {
+                    AgentAccessMenu(mode: task.accessMode ?? .workspace, disabled: task.status.isActive || task.status == .queued || board.busy) { mode in
+                        board.perform("task.access", params: ["taskID": task.id.uuidString, "mode": mode.rawValue]) { app.setAccessMode(mode) }
+                    }
+                }
+                Spacer(minLength: 0)
+            }
             ComposerWorkspaceBar(path: task.workspace, isNew: false, background: true)
             }.padding(14)
         }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
@@ -359,6 +381,7 @@ private struct NewAgentSheet: View {
         var params = ["objective": ui.objective, "title": ui.title.isEmpty ? String(ui.objective.prefix(60)) : ui.title, "acceptance": ui.acceptance, "provider": ui.provider.rawValue, "workspace": ui.workspace, "isolate": String(ui.isolate), "notifyParent": String(ui.report), "dependencies": ui.dependencies.map(\.uuidString).joined(separator: ",")]
         if let parent { params["parentID"] = parent.id.uuidString; params["includeParentContext"] = sideChat ? "true" : "false" }; if !ui.model.isEmpty { params["model"] = ui.model }; if !ui.accountID.isEmpty { params["accountID"] = ui.accountID }
         if !ui.checkpointID.isEmpty { params["checkpointID"] = ui.checkpointID }
+        params["accessMode"] = AgentAccessMode.savedDefault.rawValue
         board.perform("agents.spawn", params: params, selectResult: true) { dismiss() }
     }
 }

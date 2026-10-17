@@ -36,6 +36,7 @@ public struct AgentTask: Codable, Identifiable, Sendable {
     public var acceptance: String
     public var provider: Provider
     public var accountID: UUID?
+    public var accessMode: AgentAccessMode?
     public var model: String?
     public var workspace: String
     public var managedWorkspaceID: UUID?

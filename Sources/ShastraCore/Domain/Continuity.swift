@@ -58,7 +58,7 @@ public extension Conversation {
     var sourceEndpoint: NativeEndpoint? { nativeEndpoints.first { $0.sourceIdentity == sourceIdentity && sourceIdentity != nil } }
     /// Resume the active native identity. A provider change is an explicit new session.
     var resumeEndpoint: NativeEndpoint? {
-        guard let endpoint = activeEndpoint, endpoint.provider == provider,
+        guard let endpoint = activeEndpoint, endpoint.provider == provider, endpoint.accountID == accountID,
               !endpoint.nativeThreadID.isEmpty else { return nil }
         return endpoint
     }
@@ -70,15 +70,21 @@ public extension Conversation {
     var continuityLabel: String {
         if nativeResumeUnavailableReason != nil { return "Cursor desktop thread · Continue in Cursor" }
         if resumeEndpoint != nil { return "Same provider thread" }
+        if activeEndpoint?.provider == provider { return "Account switched · History carries forward" }
         if !nativeEndpoints.isEmpty { return "New session with another provider" }
         return "Managed runtime"
     }
 
+    /// Keep endpoint attribution intact; the next send creates a context-backed runtime for the new sign-in.
+    mutating func switchAccount(to id: UUID?) {
+        migrateEndpoints()
+        accountID = id
+        profileDirectory = nil
+        state = .idle
+    }
+
     func validateResumeAccount() throws {
         if let reason = nativeResumeUnavailableReason { throw ShastraError.unsupported(reason) }
-        if let endpoint = resumeEndpoint, endpoint.accountID != accountID {
-            throw ShastraError.invalidResponse("This thread belongs to a different sign-in. Restore its original account to continue in the same thread.")
-        }
     }
 
     mutating func recordResumedEndpoint(nativeID: String) throws -> NativeEndpoint {

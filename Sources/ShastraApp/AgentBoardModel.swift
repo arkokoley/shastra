@@ -59,7 +59,9 @@ import ShastraCore
         busy = true
         Task {
             do {
-                let result = try await client.request(method, params: params, operationID: operationID)
+                var parameters = params
+                if method == "agents.spawn", parameters["accessMode"] == nil { parameters["accessMode"] = AgentAccessMode.savedDefault.rawValue }
+                let result = try await client.request(method, params: parameters, operationID: operationID)
                 if selectResult { selectedID = try JSONDecoder().decode(AgentTask.self, from: Data(result.utf8)).id }
                 await refresh(); onSuccess?()
             } catch { self.error = "\(error.localizedDescription)\nOperation: \(operationID). If the connection was lost, inspect the task before retrying." }
