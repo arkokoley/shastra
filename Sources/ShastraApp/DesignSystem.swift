@@ -51,7 +51,7 @@ enum Design {
     static let controlRadius: CGFloat = 8
     static let cardRadius: CGFloat = 14
     static let composerRadius: CGFloat = 20
-    static let readingWidth: CGFloat = 680
+    static let readingWidth: CGFloat = 820
 }
 
 struct ShastraMark: View {

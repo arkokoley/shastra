@@ -78,32 +78,34 @@ struct WorkspaceView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            if chrome.showsSidebar { sidebar.frame(width: Design.sidebarWidth) }
-            HSplitView {
-                VStack(spacing: 0) {
-                    header
-                    Group {
-                        if model.showNewConversation {
-                            QuickChatView(board: model.agentBoard)
-                        } else if model.showAgents {
-                            AgentBoardView(board: model.agentBoard)
-                        } else if let conversation = model.selected {
-                            ConversationPane(conversation: conversation).id(conversation.id)
-                        } else { welcome }
-                    }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                }.frame(minWidth: 440, idealWidth: 740, maxWidth: .infinity)
-                    .ignoresSafeArea(.container, edges: .top)
-                if chrome.showsDock, !model.showNewConversation, !model.showAgents, let conversation = model.selected {
-                    WorkspaceToolsView(tools: tools, conversation: conversation)
-                        .frame(minWidth: 350, idealWidth: 390, maxWidth: 580)
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                if chrome.showsSidebar { sidebar.frame(width: Design.sidebarWidth) }
+                HSplitView {
+                    VStack(spacing: 0) {
+                        header
+                        Group {
+                            if model.showNewConversation {
+                                QuickChatView(board: model.agentBoard)
+                            } else if model.showAgents {
+                                AgentBoardView(board: model.agentBoard)
+                            } else if let conversation = model.selected {
+                                ConversationPane(conversation: conversation).id(conversation.id)
+                            } else { welcome }
+                        }.frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }.frame(minWidth: 440, idealWidth: 740, maxWidth: .infinity)
                         .ignoresSafeArea(.container, edges: .top)
-                        .onAppear { tools.setRoot(conversation.workingDirectory) }
-                        .onChange(of: conversation.workingDirectory) { _, path in tools.setRoot(path) }
-                }
-            }.background(Surface.canvas)
+                    if chrome.showsDock, !model.showNewConversation, !model.showAgents, let conversation = model.selected {
+                        WorkspaceToolsView(tools: tools, conversation: conversation)
+                            .frame(minWidth: 350, idealWidth: 390, maxWidth: 580)
+                            .ignoresSafeArea(.container, edges: .top)
+                            .onAppear { tools.setRoot(conversation.workingDirectory) }
+                            .onChange(of: conversation.workingDirectory) { _, path in tools.setRoot(path) }
+                    }
+                }.background(Surface.canvas)
+            }.frame(maxHeight: .infinity)
+            UsageStatusBar(board: model.agentBoard)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { UsageStatusBar(board: model.agentBoard) }
         .ignoresSafeArea(.container, edges: .top)
         .background(WindowChrome())
         .tint(Surface.accent)
@@ -477,11 +479,13 @@ private struct ConversationPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ConversationRunStatus(conversation: conversation)
-            CollaborationBar(workspace: conversation.workingDirectory, sourceID: conversation.id)
+            HStack(spacing: 12) {
+                ConversationRunStatus(conversation: conversation)
+                CollaborationBar(workspace: conversation.workingDirectory, sourceID: conversation.id, compact: true)
+            }.padding(.horizontal, 20).padding(.vertical, 5)
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 24) {
+                    LazyVStack(alignment: .leading, spacing: 16) {
                         if conversation.historyLoaded == false && model.loadingHistoryID == conversation.id {
                             VStack(spacing: 14) {
                                 ProgressView().controlSize(.small)
@@ -508,7 +512,7 @@ private struct ConversationPane: View {
                             case .entry(let entry):
                                 VStack(alignment: .leading, spacing: 5) {
                                     MessageRow(entry: entry, provider: conversation.nativeEndpoints.first(where: { $0.id == entry.endpointID })?.provider ?? conversation.sourceEndpoint?.provider ?? conversation.provider)
-                                    MessageActions(sourceID: conversation.id, entry: entry)
+                                    MessageActions(sourceID: conversation.id, entry: entry, includeCopy: true)
                                 }.id(item.id).padding(4).background(model.jumpToEntryID == entry.id ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 8))
                             case .tools(let entries):
                                 ToolActivityGroup(entries: entries).id(item.id)
@@ -543,7 +547,7 @@ private struct ConversationPane: View {
     }
 
     private var composer: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             ComposerContextBar(key: conversation.id.uuidString, workspace: conversation.workingDirectory, draft: $model.draft)
             if let reason = conversation.nativeResumeUnavailableReason {
                 VStack(alignment: .leading, spacing: 8) {
@@ -558,9 +562,9 @@ private struct ConversationPane: View {
                 }.padding(12).background(Surface.selected.opacity(0.6), in: RoundedRectangle(cornerRadius: 12))
             }
 
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 10) {
                 TextField("", text: $model.draft, axis: .vertical)
-                    .lineLimit(2...8)
+                    .lineLimit(1...8)
                     .textFieldStyle(.plain)
                     .font(.system(size: 16)).foregroundStyle(Surface.text)
                     .composerPlaceholder("Plan, build, or ask anything", visible: model.draft.isEmpty)
@@ -603,29 +607,43 @@ private struct ConversationPane: View {
                         }.buttonStyle(AppButtonStyle(kind: .primary, compact: true)).disabled(!canSend).help("Send message")
                     }
                 }.foregroundStyle(Surface.text)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        ComposerWorkspaceBar(path: conversation.workingDirectory, isNew: false, background: false, compact: true)
+                            .frame(maxWidth: 360, alignment: .leading)
+                        Spacer(minLength: 4)
+                        accessMenu
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        ComposerWorkspaceBar(path: conversation.workingDirectory, isNew: false, background: false, compact: true)
+                        accessMenu
+                    }
+                }.padding(.horizontal, 4)
             }
-            .padding(14)
+            .padding(12)
             .composerSurface(focused: composerFocused)
-            if conversation.provider == .codex {
-                AgentAccessMenu(mode: conversation.accessMode ?? .workspace,
-                                disabled: [.running, .connecting, .waitingForApproval].contains(conversation.state)) {
-                    model.setAccessMode($0, conversationID: conversation.id)
-                }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8)
-            }
-            ComposerWorkspaceBar(path: conversation.workingDirectory, isNew: false, background: false)
             if conversation.sourceIdentity != nil, conversation.sourceEndpoint?.workingDirectory == nil,
                conversation.linkedWorkspaceConfirmed != true {
                 Button("Choose workspace…") { model.chooseLinkedWorkspace() }.font(.caption)
             }
-            Text(model.hasUnresolvedDelivery(conversation)
-                 ? "Delivery outcome unknown · Check the originating runtime before retrying"
-                 : conversation.continuityLabel)
-                .font(.system(size: 10)).foregroundStyle(Surface.muted).padding(.horizontal, 5)
+            if model.hasUnresolvedDelivery(conversation) {
+                Text("Delivery outcome unknown · Check the originating runtime before retrying")
+                    .font(.system(size: 11)).foregroundStyle(Surface.warning)
+            }
         }
         .frame(maxWidth: Design.readingWidth)
-        .padding(.horizontal, Design.contentInset).padding(.top, 12).padding(.bottom, 16)
+        .padding(.horizontal, Design.contentInset).padding(.top, 6).padding(.bottom, 8)
         .frame(maxWidth: .infinity)
     }
+    @ViewBuilder private var accessMenu: some View {
+        if conversation.provider == .codex {
+            AgentAccessMenu(mode: conversation.accessMode ?? .workspace,
+                            disabled: [.running, .connecting, .waitingForApproval].contains(conversation.state)) {
+                model.setAccessMode($0, conversationID: conversation.id)
+            }
+        }
+    }
+
 
 
 }
@@ -639,20 +657,26 @@ private struct MessageRow: View {
     let entry: Entry
     let provider: Provider
     @StateObject private var interaction = ViewInteractionModel()
+    private var presentation: UserMessagePresentation { UserMessagePresentation(entry.text) }
     private var isLongMessage: Bool {
-        entry.text.count > 700 || entry.text.components(separatedBy: "\n").count > 8
+        presentation.text.count > 700 || presentation.text.components(separatedBy: "\n").count > 8
     }
     var body: some View {
         Group {
             switch entry.kind {
             case .user:
                 VStack(alignment: .leading, spacing: 10) {
-                    Text(entry.text)
+                    Text(presentation.text.isEmpty ? "Shared browser context" : presentation.text)
                         .textSelection(.enabled)
                         .font(.system(size: 15)).lineSpacing(5)
                         .foregroundStyle(Surface.text)
                         .lineLimit(isLongMessage && !interaction.expanded ? 8 : nil)
-                    CopyTextButton(text: entry.text)
+                    if let context = presentation.browserContext {
+                        DisclosureGroup("Browser context") {
+                            Text(context).font(.system(size: 11, design: .monospaced))
+                                .foregroundStyle(Surface.muted).textSelection(.enabled)
+                        }.font(.system(size: 11)).foregroundStyle(Surface.muted)
+                    }
                     if isLongMessage {
                         Button(interaction.expanded ? "Show less" : "Show full message") { interaction.expanded.toggle() }
                             .font(.system(size: 11, weight: .medium)).buttonStyle(.plain)
@@ -669,8 +693,6 @@ private struct MessageRow: View {
                         Text(provider.title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Surface.muted)
                     }
                     MarkdownMessage(text: entry.text)
-                    CopyTextButton(text: entry.text, label: "Copy agent response")
-                        .accessibilityIdentifier("copy-message-" + entry.id.uuidString)
                 }.onHover { interaction.hovered = $0 }
             case .tool:
                 ToolActivityGroup(entries: [entry])

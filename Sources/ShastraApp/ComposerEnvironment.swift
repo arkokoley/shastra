@@ -22,6 +22,7 @@ struct ComposerWorkspaceBar: View {
     let path: String
     let isNew: Bool
     let background: Bool
+    var compact = false
     private var location: WorkspaceIdentity? { app.workspaceIdentities[path] }
     private var mode: ComposerEnvironmentMode {
         if isNew { return app.newChatIsolated ? .isolated : app.newChatUsesService ? .background : .local }
@@ -36,12 +37,13 @@ struct ComposerWorkspaceBar: View {
         VStack(alignment: .leading, spacing: 3) {
             Button { presented.toggle() } label: {
                 HStack(spacing: 6) {
-                    Label(isNew ? mode.rawValue : (background ? "Background" : "This Mac") + (location?.isWorktree == true ? " · Worktree" : " · Folder"), systemImage: mode.symbol)
-                    Text("· " + (location?.projectName ?? (path.isEmpty ? "Choose a Git folder" : URL(fileURLWithPath: path).lastPathComponent)))
+                    Label(compact ? (location?.projectName ?? URL(fileURLWithPath: path).lastPathComponent) : isNew ? mode.rawValue : (background ? "Background" : "This Mac") + (location?.isWorktree == true ? " · Worktree" : " · Folder"), systemImage: mode.symbol)
                         .lineLimit(1).truncationMode(.middle)
+                    if !compact { Text("· " + (location?.projectName ?? (path.isEmpty ? "Choose a Git folder" : URL(fileURLWithPath: path).lastPathComponent)))
+                        .lineLimit(1).truncationMode(.middle) }
                     if let branch = location?.branch { Text("· " + branch).lineLimit(1).truncationMode(.middle) }
                     Image(systemName: "chevron.down").font(.system(size: 9))
-                }.frame(minHeight: 28)
+                }.frame(minHeight: compact ? 22 : 28)
             }.buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(Surface.muted)
                 .accessibilityLabel("Execution environment").accessibilityValue(mode.rawValue + ", " + path)
                 .help(path + "\n" + (isNew ? mode.detail : "This chat keeps its current workspace. Start a new chat to choose another."))

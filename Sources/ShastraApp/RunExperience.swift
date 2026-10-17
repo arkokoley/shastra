@@ -28,28 +28,29 @@ struct ConversationRunStatus: View {
         }
     }
     var body: some View {
-        HStack(spacing: 10) {
-            HStack(spacing: 5) {
-                MicroStatusMark(phase: phase, size: 12)
-                Text(label)
-            }.font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(conversation.state == .failed ? Surface.warning : Surface.accent)
-                .padding(.horizontal, 8).padding(.vertical, 5).background(Surface.accent.opacity(0.10), in: Capsule())
+        HStack(spacing: 8) {
+            MicroStatusMark(phase: phase, size: 11)
+            Text("\(label) · \(conversation.provider.title)")
+                .font(.system(size: 11, weight: .medium)).foregroundStyle(Surface.muted)
             if conversation.state == .running, let start = conversation.entries.last(where: { $0.kind == .user })?.createdAt {
                 MicroActivityClock(startedAt: start)
             }
-            Text("\(conversation.provider.title) · \(conversation.selectedModel ?? "Default model") · Runs while Shastra is open")
-                .font(.system(size: 10)).foregroundStyle(Surface.muted).lineLimit(1)
-            Spacer()
-            if app.jumpToEntryID != nil { Button("Clear search highlight") { app.jumpToEntryID = nil }.buttonStyle(.plain) }
-            if [.failed, .interrupted].contains(conversation.state) {
-                Button("Prepare follow-up") { app.prepareRecovery(conversation) }.buttonStyle(AppButtonStyle())
-            }
-            if !active && conversation.historyLoaded != false && conversation.nativeResumeUnavailableReason == nil {
-                Button("Continue in background") { app.continueInBackground(conversation) }.buttonStyle(AppButtonStyle(kind: .quiet))
-            }
-        }.padding(.horizontal, 16).padding(.vertical, 6)
+            Spacer(minLength: 4)
+            Menu {
+                Text(conversation.selectedModel ?? "Provider default model")
+                Text(conversation.continuityLabel)
+                if app.jumpToEntryID != nil { Button("Clear search highlight") { app.jumpToEntryID = nil } }
+                if [.failed, .interrupted].contains(conversation.state) {
+                    Button("Prepare follow-up") { app.prepareRecovery(conversation) }
+                }
+                if !active && conversation.historyLoaded != false && conversation.nativeResumeUnavailableReason == nil {
+                    Button("Continue in background") { app.continueInBackground(conversation) }
+                }
+            } label: { Label("Session", systemImage: "ellipsis.circle") }
+                .menuStyle(.borderlessButton).fixedSize().font(.system(size: 11))
+        }
     }
+
 }
 
 struct CompletionReview: View {

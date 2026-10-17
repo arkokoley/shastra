@@ -4,6 +4,7 @@ import SwiftUI
 struct CopyTextButton: View {
     let text: String
     var label = "Copy message"
+    var compact = false
     @StateObject private var interaction = ViewInteractionModel()
     @ViewState private var copyRevision = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,8 +22,8 @@ struct CopyTextButton: View {
             HStack(spacing: 5) {
                 Image(systemName: interaction.copied ? "checkmark" : "doc.on.doc")
                     .contentTransition(reduceMotion ? .opacity : .symbolEffect(.replace))
-                Text(interaction.copied ? "Copied" : "Copy").contentTransition(.opacity)
-            }.font(.system(size: 11)).frame(width: 64, alignment: .leading).frame(minHeight: 28).contentShape(Rectangle())
+                if !compact { Text(interaction.copied ? "Copied" : "Copy").contentTransition(.opacity) }
+            }.font(.system(size: 11)).frame(width: compact ? 28 : 64, alignment: compact ? .center : .leading).frame(minHeight: compact ? 24 : 28).contentShape(Rectangle())
         }
         .buttonStyle(MicroPressStyle())
         .foregroundStyle(interaction.copied ? Surface.accent : Surface.muted)

@@ -9,38 +9,53 @@ struct CollaborationBar: View {
     @EnvironmentObject private var app: AppModel
     let workspace: String
     var sourceID: UUID?
+    var compact = false
     var body: some View {
-        HStack(spacing: 10) {
-            Button { app.openProjectContext(workspace) } label: {
-                Label(app.projectContext(workspace).isEmpty ? "Project context" : "Project context · v\(app.projectContext(workspace).revision)", systemImage: "books.vertical")
-            }.buttonStyle(AppButtonStyle(compact: true)).disabled(workspace.isEmpty)
-            if let sourceID, let source = app.chatSource(sourceID) {
-                let count = app.collaboration.annotations.filter { $0.anchor.sourceID == sourceID && !$0.resolved }.count
-                Button { app.collaborationRoute = .annotations(source) } label: { Label("Annotations · \(count)", systemImage: "text.bubble") }
-                    .buttonStyle(AppButtonStyle(compact: true))
-                if let task = app.agentBoard.snapshot?.tasks.first(where: { $0.id == sourceID }), task.forkOrigin != nil {
-                    Button("Compare fork") { app.collaborationRoute = .compare(task.id) }.buttonStyle(AppButtonStyle(compact: true))
-                }
+        Group {
+            if compact {
+                Menu { actions } label: { Label("Context", systemImage: "books.vertical") }
+                    .menuStyle(.borderlessButton).fixedSize().font(.system(size: 11))
+                    .help("Project context, annotations, and fork comparison")
+            } else {
+                HStack(spacing: 10) { actions; Spacer(minLength: 0) }
+                    .font(.caption).padding(.horizontal, 16).padding(.vertical, 8)
             }
-            Spacer(minLength: 0)
-        }.font(.caption).padding(.horizontal, 16).padding(.vertical, 8)
-            .task(id: workspace) { await app.resolveWorkspace(workspace); await app.refreshCollaboration() }
+        }.task(id: workspace) { await app.resolveWorkspace(workspace); await app.refreshCollaboration() }
+    }
+    @ViewBuilder private var actions: some View {
+        Button { app.openProjectContext(workspace) } label: {
+            Label(app.projectContext(workspace).isEmpty ? "Project context" : "Project context · v\(app.projectContext(workspace).revision)", systemImage: "books.vertical")
+        }.buttonStyle(AppButtonStyle(compact: true)).disabled(workspace.isEmpty)
+        if let sourceID, let source = app.chatSource(sourceID) {
+            let count = app.collaboration.annotations.filter { $0.anchor.sourceID == sourceID && !$0.resolved }.count
+            Button { app.collaborationRoute = .annotations(source) } label: { Label("Annotations · \(count)", systemImage: "text.bubble") }
+                .buttonStyle(AppButtonStyle(compact: true))
+            if let task = app.agentBoard.snapshot?.tasks.first(where: { $0.id == sourceID }), task.forkOrigin != nil {
+                Button("Compare fork") { app.collaborationRoute = .compare(task.id) }.buttonStyle(AppButtonStyle(compact: true))
+            }
+        }
     }
 }
+
 struct MessageActions: View {
     @EnvironmentObject private var app: AppModel
     let sourceID: UUID
     let entry: Entry
+    var includeCopy = false
     var body: some View {
         if [.user, .assistant].contains(entry.kind), let source = app.chatSource(sourceID) {
             HStack(spacing: 10) {
+                if includeCopy {
+                    CopyTextButton(text: entry.text, label: entry.kind == .assistant ? "Copy agent response" : "Copy message", compact: true)
+                        .accessibilityIdentifier("copy-message-" + entry.id.uuidString)
+                }
                 Button { app.collaborationRoute = .annotate(source, entry) } label: { Label("Annotate", systemImage: "text.bubble") }
                 Button { app.collaborationRoute = .fork(source, entry) } label: { Label("Fork from here", systemImage: "arrow.triangle.branch") }
                 let count = app.collaboration.annotations.filter { $0.anchor.sourceID == sourceID && $0.anchor.entryID == entry.id && !$0.resolved }.count
                 if count > 0 { Text("\(count) open").foregroundStyle(Surface.accent) }
                 Spacer()
-            }.font(.system(size: 10)).buttonStyle(.plain).foregroundStyle(Surface.muted)
-                .padding(.top, 5).accessibilityElement(children: .contain)
+            }.font(.system(size: 11)).buttonStyle(.plain).foregroundStyle(Surface.muted)
+                .padding(.top, 2).accessibilityElement(children: .contain)
         }
     }
 }
