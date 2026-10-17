@@ -588,7 +588,7 @@ private struct TerminalPane: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Circle().fill(session.isRunning ? .green : .secondary).frame(width: 7, height: 7)
+                Circle().fill(session.isRunning ? Surface.accent : Surface.muted).frame(width: 7, height: 7)
                 Text(session.directory.path)
                     .font(.system(size: 11, design: .monospaced))
                     .lineLimit(1).foregroundStyle(.secondary)

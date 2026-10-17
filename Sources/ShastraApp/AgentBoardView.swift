@@ -98,7 +98,7 @@ struct AgentBoardView: View {
         case .todo: Surface.muted
         case .running: Surface.accent
         case .needsInput: Surface.warning
-        case .review: .purple
+        case .review: Surface.muted
         case .done: Surface.accent
         }
     }
@@ -222,7 +222,7 @@ private struct AgentTaskDetail: View {
                     ForEach(task.approvals) { approval in ServiceApprovalView(board: board, taskID: task.id, approval: approval) }
                     ForEach(task.messages.filter { $0.state == .unknown }) { message in
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Delivery needs inspection", systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
+                            Label("Delivery needs inspection", systemImage: "exclamationmark.triangle").foregroundStyle(Surface.warning)
                             Text(message.text).lineLimit(3)
                             TextField("Evidence from the originating runtime", text: $ui.evidence)
                             HStack {

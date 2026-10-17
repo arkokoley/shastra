@@ -80,8 +80,8 @@ struct GitChangesPane: View {
                                     HStack {
                                         Text(item.path).lineLimit(1)
                                         Spacer()
-                                        Text("+\(item.hunks.reduce(0) { $0 + $1.added })").foregroundStyle(.green)
-                                        Text("−\(item.hunks.reduce(0) { $0 + $1.removed })").foregroundStyle(.red)
+                                        Text("+\(item.hunks.reduce(0) { $0 + $1.added })").foregroundStyle(Surface.success)
+                                        Text("−\(item.hunks.reduce(0) { $0 + $1.removed })").foregroundStyle(Surface.danger)
                                     }.font(.caption).padding(8).background(state.path == item.path ? Surface.selected : .clear, in: RoundedRectangle(cornerRadius: 7))
                                 }.buttonStyle(.plain).help(item.path)
                             }

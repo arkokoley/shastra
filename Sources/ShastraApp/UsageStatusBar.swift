@@ -78,10 +78,10 @@ struct UsageStatusBar: View {
                                 Text("\(window.label) · \(window.remainingPercent)% left")
                                 ProgressView(value: Double(window.remainingPercent), total: 100)
                                     .progressViewStyle(.linear).frame(width: 44)
-                                    .tint(window.remainingPercent <= 10 ? .orange : Surface.accent)
+                                    .tint(window.remainingPercent <= 10 ? Surface.warning : Surface.accent)
                             }
                         }
-                        if usage.error != nil { Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange) }
+                        if usage.error != nil { Image(systemName: "exclamationmark.triangle").foregroundStyle(Surface.warning) }
                     }
                     Image(systemName: "chevron.up").font(.system(size: 8))
                 }.contentShape(Rectangle())

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Website palette: cream surfaces, olive ink, and terracotta accents.
+/// Neutral reading surfaces and a restrained graphite control palette.
 /// Native controls retain keyboard navigation and system focus treatment.
 enum Surface {
     static func color(_ light: UInt32, _ dark: UInt32) -> Color {
@@ -17,20 +17,21 @@ enum Surface {
             NSColor(white: appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light, alpha: 1)
         })
     }
-    static let canvas = color(0xF6F4EE, 0x1C1D19)
-    static let sidebar = color(0xF0F1E9, 0x181A16)
-    static let dock = color(0xE9ECDF, 0x23261F)
-    static let raised = color(0xFFFEFA, 0x292B24)
-    static let selected = color(0xE0E5D8, 0x383D30)
-    static let stroke = color(0xDCDED3, 0x424638)
-    static let muted = color(0x686C62, 0xB0B5A6)
-    static let text = color(0x242820, 0xF6F4EE)
-    static let accent = color(0xB74D2E, 0xF0A184)
-    static let onAccent = color(0xFFFEFA, 0x291B15)
-    static let hover = color(0xE9ECDF, 0x32362B)
-    static let code = color(0xF5F5EF, 0x181A16)
-    static let warning = color(0x95600E, 0xF3BC61)
-    static let danger = color(0xB63E42, 0xFF9297)
+    static let canvas = color(0xF2F2F0, 0x232426)
+    static let sidebar = color(0xECECEA, 0x1F2022)
+    static let dock = color(0xE8E9E7, 0x26282A)
+    static let raised = color(0xFAFAF8, 0x2A2C2F)
+    static let selected = color(0xE2E3E2, 0x34373A)
+    static let stroke = color(0xD6D7D5, 0x45494D)
+    static let muted = color(0x62676C, 0xADB1B5)
+    static let text = color(0x2F3235, 0xE3E5E7)
+    static let accent = color(0x545D66, 0xAEB8C2)
+    static let onAccent = color(0xFAFAF8, 0x23272B)
+    static let hover = color(0xE8E9E7, 0x303336)
+    static let code = color(0xEFEFEE, 0x202224)
+    static let warning = color(0x876A37, 0xC1A878)
+    static let success = color(0x417057, 0x8AAF91)
+    static let danger = color(0xAC5A5F, 0xD89599)
 }
 
 enum Design {
@@ -113,7 +114,7 @@ private struct MaterialPanel: ViewModifier {
         if reduceTransparency || contrast == .increased {
             content.background(color, in: RoundedRectangle(cornerRadius: radius))
         } else {
-            content.background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: radius))
+            content.background(color.opacity(0.88), in: RoundedRectangle(cornerRadius: radius))
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius))
         }
     }
@@ -123,7 +124,7 @@ private struct SidebarMaterial: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
         view.material = .sidebar
-        view.blendingMode = .behindWindow
+        view.blendingMode = .withinWindow
         view.state = .followsWindowActiveState
         return view
     }
@@ -137,7 +138,7 @@ private struct GlassSidebar: ViewModifier {
         if reduceTransparency || contrast == .increased {
             content.background(Surface.sidebar)
         } else {
-            content.background(Surface.sidebar.opacity(0.18))
+            content.background(Surface.sidebar.opacity(0.85))
                 .background(SidebarMaterial())
         }
     }
@@ -229,7 +230,7 @@ private struct ComposerSurface: ViewModifier {
             .overlay(RoundedRectangle(cornerRadius: Design.composerRadius)
                 .stroke(focused ? Surface.accent.opacity(0.65) : Surface.stroke, lineWidth: focused ? 1.5 : 1)
                 .allowsHitTesting(false))
-            .shadow(color: focused ? Surface.accent.opacity(0.10) : Color.black.opacity(0.045), radius: focused ? 22 : 18, x: 0, y: 6)
+            .shadow(color: Color.black.opacity(0.035), radius: 10, x: 0, y: 3)
             .animation(reduceMotion ? nil : MicroMotion.settle, value: focused)
     }
 }

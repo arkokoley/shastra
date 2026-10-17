@@ -399,7 +399,7 @@ private struct ConversationSidebarRow: View {
             Text(Design.age(conversation.updatedAt))
                 .font(.system(size: 9)).foregroundStyle(Surface.muted).lineLimit(1).frame(maxWidth: 46)
             if conversation.state == .running || conversation.state == .waitingForApproval {
-                Circle().fill(conversation.state == .waitingForApproval ? .orange : .green)
+                Circle().fill(conversation.state == .waitingForApproval ? Surface.warning : Surface.accent)
                     .frame(width: 5, height: 5)
             }
         }
@@ -426,16 +426,7 @@ private struct ProviderMark: View {
         case .hermes: "bolt"
         }
     }
-    private var tint: Color {
-        switch provider {
-        case .codex: .mint
-        case .cursor: .indigo
-        case .claude: .orange
-        case .grok: .primary
-        case .opencode: .cyan
-        case .hermes: .purple
-        }
-    }
+    private var tint: Color { Surface.accent }
     var body: some View {
         Image(systemName: symbol)
             .font(.system(size: size * 0.43, weight: .medium))
@@ -691,9 +682,9 @@ private struct MessageRow: View {
                 .frame(maxWidth: .infinity)
             case .error:
                 Label(entry.text, systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 13)).foregroundStyle(.red)
+                    .font(.system(size: 13)).foregroundStyle(Surface.danger)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.red.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                    .background(Surface.danger.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
             }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -723,8 +714,8 @@ private struct ApprovalCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.orange.opacity(0.09), in: RoundedRectangle(cornerRadius: 13))
-        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Color.orange.opacity(0.2)))
+        .background(Surface.warning.opacity(0.09), in: RoundedRectangle(cornerRadius: 13))
+        .overlay(RoundedRectangle(cornerRadius: 13).stroke(Surface.warning.opacity(0.2)))
     }
 }
 

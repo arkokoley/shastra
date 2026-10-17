@@ -51,7 +51,7 @@ struct AccountsView: View {
             Surface.stroke.frame(height: 1)
             VStack(alignment: .leading, spacing: 13) {
                 if let error = model.accountError {
-                    Label(error, systemImage: "exclamationmark.triangle").font(.system(size: 12)).foregroundStyle(.red)
+                    Label(error, systemImage: "exclamationmark.triangle").font(.system(size: 12)).foregroundStyle(Surface.danger)
                         .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
                 } else if let status = model.accountStatus {
                     Label(status, systemImage: "checkmark.circle").font(.system(size: 12)).foregroundStyle(Surface.accent)
